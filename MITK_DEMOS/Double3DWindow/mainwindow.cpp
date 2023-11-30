@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "./ui_mainwindow.h"
+#include "ui_mainwindow.h"
 #include <QHBoxLayout>
 #include <QmitkStdMultiWidget.h>
 #include <mitkIOUtil.h>
@@ -32,8 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
     w1->SetDataStorage(ds1);
     w2->SetDataStorage(ds2);
     rw->GetRenderer()->SetDataStorage(ds3);
-    rw->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Coronal);
-    rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
+    //rw->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Coronal);
+    rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
     w1->InitializeMultiWidget();
     w2->InitializeMultiWidget();
     w1->AddPlanesToDataStorage();
@@ -48,7 +48,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_loaddata_clicked()
 {
-    mitk::IOUtil::Load("D:/Images/knee-small",*ds1);
+    mitk::IOUtil::Load("D:/image/CTJ212120",*ds1);
     auto subset=ds1->GetSubset(mitk::NodePredicateDataType::New("Image"));
     for(auto iter : *subset){
         iter->SetProperty("volumerendering",mitk::BoolProperty::New(1));

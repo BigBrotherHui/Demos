@@ -21,8 +21,6 @@ private slots:
 
     void on_pushButton_addpoint_clicked();
 
-    void on_pushButton_addpoint_2_clicked();
-
 private:
     Ui::MainWindow *ui;
     QmitkStdMultiWidget *w1;
