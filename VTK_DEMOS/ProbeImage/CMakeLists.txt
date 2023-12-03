@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 2.6)
+
+PROJECT(ProbeImage)
+
+FIND_PACKAGE(VTK REQUIRED)
+find_package(QT NAMES Qt5 REQUIRED COMPONENTS Widgets Core)
+ADD_EXECUTABLE(${PROJECT_NAME} probeimage.cxx
+)
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "VTK_DEMOS")
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE ${VTK_LIBRARIES} Qt5::Widgets Qt5::Core)
+

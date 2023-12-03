@@ -4,3 +4,4 @@ cmake_minimum_required(VERSION 3.22)
 #开启多编译器编译 
 set(CMAKE_CXX_FLAGS "/MP ${CMAKE_CXX_FLAGS}" )
 add_subdirectory(Smooth)
+add_subdirectory(ProbeImage)
