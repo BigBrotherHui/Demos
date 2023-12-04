@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
   igl::opengl::glfw::Viewer viewer;
 //  viewer.data().set_mesh(VC,FC);
 //  // Initialize
-  update(viewer);
+ update(viewer);
 
   viewer.data().show_lines = true;
   viewer.callback_key_down = &key_down;
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   w->SetInputData(offreader->GetOutput());
   w->Update();
   w->Write();
-  viewer.launch();
-
+    viewer.launch();
+  
   a.exec();
 }
