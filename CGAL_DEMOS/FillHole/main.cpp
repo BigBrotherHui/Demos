@@ -17,6 +17,8 @@ typedef CGAL::Surface_mesh<K::Point_3> Surface_mesh;
 typedef CGAL::Polyhedron_3<K> Polyhedron;
 typedef Surface_mesh::Vertex_index vertex_descriptor;
 typedef Surface_mesh::Face_index face_descriptor;
+typedef CGAL::Surface_mesh<Kernel::Point_3> Mesh;
+typedef Mesh::Property_map<face_descriptor, double> Face_area_map;
 #define dot(u,v)   ((u).x() * (v).x() + (u).y() * (v).y() + (u).z() * (v).z())
 #define norm(v)    sqrt(dot(v, v))  // norm = length of vector
 #define d(u, v)     norm(u - v)       // distance = norm of difference
@@ -31,6 +33,15 @@ float pbase_Plane(K::Point_3 P, K::Plane_3 PL, K::Point_3* B)
     * B = P + sb * n;
     return d(P, *B);
 }
+struct Compute_area
+{
+    double operator()(const Polyhedron::Facet& f) const {
+        return K::Compute_area_3()(
+            f.halfedge()->vertex()->point(),
+            f.halfedge()->next()->vertex()->point(),
+            f.halfedge()->opposite()->vertex()->point());
+    }
+};
 int main()
 {
     //构造平面
@@ -40,8 +51,13 @@ int main()
 	std::string stl_file_name = "D:/Demos_BUILD/lib/x64/Release/stl/Femur_left.stl";
 	Polyhedron_3 poly_Partition;
 	CGAL::Polygon_mesh_processing::IO::read_polygon_mesh(stl_file_name, poly_Partition);
-    //PMP::clip(poly_Partition, cut_plane, CGAL::parameters::vertex_point_map(get(CGAL::vertex_point, poly_Partition)));
-    PMP::stitch_borders(poly_Partition, CGAL::parameters::vertex_point_map(get(CGAL::vertex_point, poly_Partition)));
+    Mesh mesh;
+    CGAL::copy_face_graph(poly_Partition, mesh);
+    for (const auto& face : mesh.faces()) {
+        auto ar = CGAL::Polygon_mesh_processing::area(face, mesh);
+        // std::cout << "Face area: " << ar.exact() << std::endl;
+    }
+    //PMP::stitch_borders(poly_Partition, CGAL::parameters::vertex_point_map(get(CGAL::vertex_point, poly_Partition)));
 #if defined(CGAL_TEST_SUITE)
     bool cgal_test_suite = true;
 #else
