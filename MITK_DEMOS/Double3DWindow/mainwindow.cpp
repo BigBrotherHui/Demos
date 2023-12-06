@@ -10,7 +10,7 @@
 #include <mitkPointSetDataInteractor.h>
 #include <mitkNodePredicateDataType.h>
 #include <mitkImage.h>
-#include <mitkSplineVtkMapper3D.h>
+//#include <mitkSplineVtkMapper3D.h>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -66,8 +66,8 @@ void MainWindow::on_pushButton_addpoint_clicked()
     mitk::DataNode::Pointer dt=mitk::DataNode::New();
     mitk::PointSet::Pointer ps=mitk::PointSet::New();
     dt->SetData(ps);
-    mitk::SplineVtkMapper3D::Pointer mapper = mitk::SplineVtkMapper3D::New();
-    dt->SetMapper(mitk::BaseRenderer::Standard3D, mapper);
+    //mitk::SplineVtkMapper3D::Pointer mapper = mitk::SplineVtkMapper3D::New();
+    //dt->SetMapper(mitk::BaseRenderer::Standard3D, mapper);
     dt->SetProperty("pointsize",mitk::FloatProperty::New(10.));
     mitk::PointSetDataInteractor::Pointer inter=mitk::PointSetDataInteractor::New();
     inter->SetMaxPoints(10);
