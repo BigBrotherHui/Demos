@@ -20,6 +20,7 @@
 #include <QThread>
 #include "TimerThread.h"
 #include <vtkCamera.h>
+#include <QDateTime>
 vtkSmartPointer<vtkImageData> ReamWidget::generateImageData()
 {
     vtkSmartPointer<vtkImageData> ret = vtkSmartPointer<vtkImageData>::New();
@@ -87,16 +88,18 @@ void ReamWidget::slot_btn_clicked()
     if(!m_data_loaded)
     {
         vtkNew<vtkSTLReader> reader;
-        reader->SetFileName("D:/Demos/Dependence/resources/stl/YS_NA_Tibia_PS_5_NA.STL");
+        reader->SetFileName(QString(qApp->applicationDirPath()+"/stl/YS_NA_Tibia_PS_5_NA.STL").toStdString().c_str());
         reader->Update();
 
-        reader_cutter->SetFileName("D:/Demos/Dependence/resources/stl/thinCutter.STL");
+        reader_cutter->SetFileName(QString(qApp->applicationDirPath() + "/stl/thinCutter.STL").toStdString().c_str());
         reader_cutter->Update();
 
         memcpy(vmt_tibia_prosthesis->GetData(), mt_tibia, sizeof(double) * 16);
 
         vmt_cutter->DeepCopy(vmt_tibia_prosthesis);
-
+        double pt[3]{ -15.0517, -216.174, 1322.04 };
+        for(int i=0;i<3;++i)
+			vmt_cutter->SetElement(i, 3, pt[i]);
         auto prosthesis = transformPolyData(vmt_tibia_prosthesis, reader->GetOutput());
 
         double* bounds = prosthesis->GetBounds();
@@ -116,7 +119,7 @@ void ReamWidget::slot_btn_clicked()
         polyDataToImageData(prosthesis, img, pti, stencil);
 
         vtkNew<vtkSTLReader> reader_femur;
-        reader_femur->SetFileName("D:/Demos/Dependence/resources/stl/TibiaLeft_Cutted.stl");
+        reader_femur->SetFileName(QString(qApp->applicationDirPath() + "/stl/TibiaLeft_Cutted.stl").toStdString().c_str());
         reader_femur->Update();
 
         vtkSmartPointer<vtkImageStencil> stencil_femur = vtkSmartPointer<vtkImageStencil>::New();
@@ -233,13 +236,13 @@ void ReamWidget::slot_btn_clicked()
 
 void ReamWidget::slot_timeout()
 {
-    static int i = 0;
-    static int j = 0;
-    vmt_cutter->SetElement(2, 3, 1400 - i % 50);
-    if (i > 100)
-        vmt_cutter->SetElement(1, 3, vmt_cutter->GetElement(1, 3) - j % 20);
-    i += 1;
-    j += 2;
+    qDebug() << "start:"<<QDateTime::currentDateTime();
+    Eigen::Vector3d v1{ -15.0517, -216.174, 1322.04 },v2{ -24.1781, -210.9, 1323.7 };
+    Eigen::Vector3d dir = (v2 - v1).normalized();
+    for(int i=0;i<3;++i)
+    {
+        vmt_cutter->SetElement(i, 3, vmt_cutter->GetElement(i, 3) + 1 * dir[i]);
+    }
     auto r = transformPolyData(vmt_cutter, reader_cutter->GetOutput());
     vtkSmartPointer<vtkPolyDataToImageStencil> pti = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
     vtkSmartPointer<vtkImageData> img = generateImageData();
@@ -265,6 +268,7 @@ void ReamWidget::slot_timeout()
     sur->SetVtkPolyData(smooth->GetOutput());
     m_ds->GetNamedNode("cutter")->GetData()->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(vmt_cutter);
     mitk::RenderingManager::GetInstance()->RequestUpdate(m_w->GetVtkRenderWindow());
+    qDebug() << "end:"<<QDateTime::currentDateTime();
 }
 
 ReamWidget::ReamWidget(QWidget *parent)
@@ -284,7 +288,7 @@ ReamWidget::ReamWidget(QWidget *parent)
     connect(btn, &QPushButton::clicked, this, &ReamWidget::slot_btn_clicked);
     m_thread = new QThread();
     m_timer = new QTimer;
-    m_timer->setInterval(100);
+    m_timer->setInterval(1000./30);
     m_timer->moveToThread(m_thread);
     connect(m_thread, SIGNAL(started()), m_timer, SLOT(start()));//线程打开同时启动线程中的定时器
     connect(m_timer, SIGNAL(timeout()), this, SLOT(slot_timeout()), Qt::DirectConnection);
