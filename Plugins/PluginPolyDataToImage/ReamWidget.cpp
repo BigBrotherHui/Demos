@@ -17,6 +17,9 @@
 #include <vtkOutputWindow.h>
 #include <QBoxLayout>
 #include <QPushButton>
+#include <QThread>
+#include "TimerThread.h"
+#include <vtkCamera.h>
 vtkSmartPointer<vtkImageData> ReamWidget::generateImageData()
 {
     vtkSmartPointer<vtkImageData> ret = vtkSmartPointer<vtkImageData>::New();
@@ -67,6 +70,16 @@ vtkSmartPointer<vtkPolyData> ReamWidget::transformPolyData(vtkMatrix4x4* mt, vtk
     fi->Update();
     ret->DeepCopy(fi->GetOutput());
     return ret;
+}
+
+void ReamWidget::hideEvent(QHideEvent* event)
+{
+    //return hideEvent(event);
+}
+
+void ReamWidget::showEvent(QShowEvent* event)
+{
+    //return QWidget::showEvent(event);
 }
 
 void ReamWidget::slot_btn_clicked()
@@ -209,10 +222,49 @@ void ReamWidget::slot_btn_clicked()
         dt->SetName("rest");
         mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_w->GetVtkRenderWindow(), m_ds);
         dt->SetMapper(2, mitk::CustomSurfaceVtkMapper3D::New());
+        vtkCamera *camera=m_w->GetRenderer()->GetVtkRenderer()->GetActiveCamera();
+        camera->SetViewUp(0, 1, 0);
+        camera->SetFocalPoint(smooth->GetOutput()->GetCenter());
+        camera->SetPosition(smooth->GetOutput()->GetCenter()[0], smooth->GetOutput()->GetCenter()[1], smooth->GetOutput()->GetCenter()[2] + 400);
+        m_w->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
     }
-    if (m_timer->isActive())
-        m_timer->stop();
-    else m_timer->start();
+    m_thread->start();
+}
+
+void ReamWidget::slot_timeout()
+{
+    static int i = 0;
+    static int j = 0;
+    vmt_cutter->SetElement(2, 3, 1400 - i % 50);
+    if (i > 100)
+        vmt_cutter->SetElement(1, 3, vmt_cutter->GetElement(1, 3) - j % 20);
+    i += 1;
+    j += 2;
+    auto r = transformPolyData(vmt_cutter, reader_cutter->GetOutput());
+    vtkSmartPointer<vtkPolyDataToImageStencil> pti = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    vtkSmartPointer<vtkImageData> img = generateImageData();
+    polyDataToImageData(r, img, pti, stencil_cutter);
+#pragma omp parallel for
+    for (int i = 0; i < mDimensions[2]; ++i) {
+        for (int j = 0; j < mDimensions[1]; ++j) {
+            for (int k = 0; k < mDimensions[0]; ++k) {
+                uchar* pCutter = (uchar*)(stencil_cutter->GetOutput()->GetScalarPointer(k, j, i));
+                uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, i));
+                if (*pCutter != 0) {
+                    *pAll = 0;
+                }
+            }
+        }
+    }
+    m_imageMathematicsAdd->GetOutput()->Modified();
+    flying->SetInputData(m_imageMathematicsAdd->GetOutput());
+    flying->Update();
+    smooth->SetInputData(flying->GetOutput());
+    smooth->Update();
+    mitk::Surface::Pointer sur = static_cast<mitk::Surface*>(m_ds->GetNamedNode("rest")->GetData());
+    sur->SetVtkPolyData(smooth->GetOutput());
+    m_ds->GetNamedNode("cutter")->GetData()->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(vmt_cutter);
+    mitk::RenderingManager::GetInstance()->RequestUpdate(m_w->GetVtkRenderWindow());
 }
 
 ReamWidget::ReamWidget(QWidget *parent)
@@ -222,6 +274,7 @@ ReamWidget::ReamWidget(QWidget *parent)
     vtkOutputWindow::SetGlobalWarningDisplay(0);
     QVBoxLayout* ly = new QVBoxLayout(this);
     m_w = new QmitkRenderWindow(this);
+    m_w->setAttribute(Qt::WA_TransparentForMouseEvents);
     m_w->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
     m_ds = mitk::StandaloneDataStorage::New();
     m_w->GetRenderer()->SetDataStorage(m_ds);
@@ -229,45 +282,16 @@ ReamWidget::ReamWidget(QWidget *parent)
     QPushButton* btn = new QPushButton(this);
     ly->addWidget(btn);
     connect(btn, &QPushButton::clicked, this, &ReamWidget::slot_btn_clicked);
-    m_timer=new QTimer(this);
+    m_thread = new QThread();
+    m_timer = new QTimer;
     m_timer->setInterval(100);
-    QObject::connect(m_timer, &QTimer::timeout, [&]
-        {
-            static int i = 0;
-            static int j = 0;
-            vmt_cutter->SetElement(2, 3, 1500 - i % 400);
-            if (i > 100)
-                vmt_cutter->SetElement(1, 3, vmt_cutter->GetElement(1, 3) - j % 20);
-            i += 4;
-            j += 1;
-            auto r = transformPolyData(vmt_cutter, reader_cutter->GetOutput());
-            vtkSmartPointer<vtkPolyDataToImageStencil> pti = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
-            vtkSmartPointer<vtkImageData> img = generateImageData();
-            polyDataToImageData(r, img, pti, stencil_cutter);
-#pragma omp parallel for
-            for (int i = 0; i < mDimensions[2]; ++i) {
-                for (int j = 0; j < mDimensions[1]; ++j) {
-                    for (int k = 0; k < mDimensions[0]; ++k) {
-                        uchar* pCutter = (uchar*)(stencil_cutter->GetOutput()->GetScalarPointer(k, j, i));
-                        uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, i));
-                        if (*pCutter != 0) {
-                            *pAll = 0;
-                        }
-                    }
-                }
-            }
-            m_imageMathematicsAdd->GetOutput()->Modified();
-            flying->SetInputData(m_imageMathematicsAdd->GetOutput());
-            flying->Update();
-            smooth->SetInputData(flying->GetOutput());
-            smooth->Update();
-            mitk::Surface::Pointer sur = static_cast<mitk::Surface *>(m_ds->GetNamedNode("rest")->GetData());
-            sur->SetVtkPolyData(smooth->GetOutput());
-            m_ds->GetNamedNode("cutter")->GetData()->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(vmt_cutter);
-            mitk::RenderingManager::GetInstance()->RequestUpdate(m_w->GetVtkRenderWindow());
-        });
+    m_timer->moveToThread(m_thread);
+    connect(m_thread, SIGNAL(started()), m_timer, SLOT(start()));//线程打开同时启动线程中的定时器
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(slot_timeout()), Qt::DirectConnection);
 }
 
 ReamWidget::~ReamWidget()
 {
+    m_thread->quit();
+    m_thread->wait();
 }

@@ -12,10 +12,11 @@
 #include <vtkDiscreteFlyingEdges3D.h>
 
 #include <mitkStandaloneDataStorage.h>
-
+#include <qdebug>
 class QmitkRenderWindow;
 class PluginManager;
-
+class TimerThread;
+class QThread;
 class ReamWidget : public QWidget
 {
     Q_OBJECT
@@ -30,8 +31,11 @@ protected:
         vtkSmartPointer<vtkPolyDataToImageStencil> stencil,
         vtkSmartPointer<vtkImageStencil> imagestencil);
     vtkSmartPointer<vtkPolyData> transformPolyData(vtkMatrix4x4* mt, vtkPolyData* p);
+    void hideEvent(QHideEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 protected slots:
     void slot_btn_clicked();
+    void slot_timeout();
 private slots:
 
 private:
@@ -58,13 +62,13 @@ private:
     QmitkRenderWindow *m_w{nullptr};
     mitk::StandaloneDataStorage::Pointer m_ds;
     bool m_data_loaded{ false };
-    QTimer* m_timer{nullptr};
     vtkSmartPointer<vtkSmoothPolyDataFilter> smooth = vtkSmartPointer<vtkSmoothPolyDataFilter>::New();
     vtkNew<vtkSTLReader> reader_cutter;
     vtkSmartPointer<vtkImageStencil> stencil_cutter = vtkSmartPointer<vtkImageStencil>::New();
     vtkSmartPointer<vtkImageMathematics> m_imageMathematicsAdd = vtkSmartPointer<vtkImageMathematics>::New();
     vtkNew<vtkDiscreteFlyingEdges3D> flying;
-
-
+    bool m_timer_active{ false };
+    QThread* m_thread;
+    QTimer* m_timer;
 };
 #endif // WIDGET_H

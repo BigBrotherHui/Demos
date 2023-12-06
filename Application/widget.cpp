@@ -28,11 +28,11 @@ Widget::Widget(QWidget *parent)
                 if (loader)
                 {
                     PluginUIInterface* plugin = dynamic_cast<PluginUIInterface*>(loader->instance());
-                    if (plugin && plugin->widget())
+                    if (plugin && plugin->createWidget())
                     {
                         ui->listWidget->addItem(plugin->get_name());
-                        ui->stackedWidget->insertWidget(0, plugin->widget());
-                        plugin->widget()->show();
+                        ui->stackedWidget->insertWidget(0, plugin->createWidget());
+                        plugin->createWidget()->show();
                     }
                 }
                 else
@@ -44,7 +44,7 @@ Widget::Widget(QWidget *parent)
             if (!index.isValid())
                 return;
             QString item = ui->listWidget->item(index.row())->text();
-            ui->stackedWidget->setCurrentWidget(dynamic_cast<PluginUIInterface*>(PluginManager::instance()->getPlugin(item)->instance())->widget());
+            ui->stackedWidget->setCurrentWidget(dynamic_cast<PluginUIInterface*>(PluginManager::instance()->getPlugin(item)->instance())->createWidget());
         });
 }
 

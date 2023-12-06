@@ -34,13 +34,13 @@ class PluginUIInterface : public PluginInterface
 {
 public:
     virtual ~PluginUIInterface() {
-        QWidget* w = widget();
+        QWidget* w = createWidget();
         if (!w) {
             w->deleteLater();
             w = nullptr;
         }
     }
-    virtual QWidget* widget() {
+    virtual QWidget* createWidget() {
         return nullptr;
     }
 };

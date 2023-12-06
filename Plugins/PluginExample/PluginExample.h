@@ -25,7 +25,7 @@ public:
     {
         qDebug()<<"插件PluginExample接收到消息："<< metaData.msg;
     }
-    QWidget *widget() override;
+    QWidget * createWidget() override;
 
 signals:
     void sendMsg2Manager(PluginMetaData) Q_DECL_OVERRIDE;

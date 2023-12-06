@@ -4,7 +4,7 @@ Plugin::Plugin()
 {
 }
 
-QWidget* Plugin::widget()
+QWidget* Plugin::createWidget()
 {
 	if(!m_widget)
 		m_widget = new Widget;

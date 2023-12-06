@@ -13,7 +13,7 @@ PluginPolyDataToImage::~PluginPolyDataToImage()
 {
 }
 
-QWidget* PluginPolyDataToImage::widget()
+QWidget* PluginPolyDataToImage::createWidget()
 {
     if (!m_widget)
         m_widget = new ReamWidget;
