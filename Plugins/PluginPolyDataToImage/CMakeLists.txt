@@ -7,7 +7,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Concurrent)
 find_package(MITK 2023.04 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(VTK REQUIRED)
@@ -47,6 +47,6 @@ endif()
 # 设置筛选器
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Plugins")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core ${VTK_LIBRARIES}
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Concurrent ${VTK_LIBRARIES}
 MitkCore MitkQtWidgets MitkMapperExt
 )
