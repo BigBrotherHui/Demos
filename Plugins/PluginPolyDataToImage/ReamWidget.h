@@ -14,6 +14,8 @@
 #include <qdebug>
 #include <QThreadPool>
 #include <QQueue>
+#include <vtkWindowedSincPolyDataFilter.h>
+
 class QmitkRenderWindow;
 class PluginManager;
 class TimerThread;
@@ -92,6 +94,8 @@ private:
         vtkSmartPointer<vtkPolyData> m_polydata{ nullptr };
         ReamWidget* reamwidget{nullptr};
         int m_order;
+
+
     protected:
         void run() override;
     };

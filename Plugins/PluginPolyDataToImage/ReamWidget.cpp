@@ -23,6 +23,7 @@
 #include <QDateTime>
 #include <QtConcurrent/QtConcurrent>
 #include <vtkSTLWriter.h>
+#include <vtkWindowedSincPolyDataFilter.h>
 vtkSmartPointer<vtkImageData> ReamWidget::generateImageData()
 {
     vtkSmartPointer<vtkImageData> ret = vtkSmartPointer<vtkImageData>::New();
@@ -310,11 +311,9 @@ void ReamWidget::Task::run()
     flying->SetComputeScalars(true);
     flying->Update();
     reamwidget->m_lock.unlock();
-    vtkSmartPointer<vtkSmoothPolyDataFilter> smooth = vtkSmartPointer<vtkSmoothPolyDataFilter>::New();
+    vtkSmartPointer<vtkWindowedSincPolyDataFilter> smooth = vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
     smooth->SetInputData(flying->GetOutput());
     smooth->SetNumberOfIterations(20);
-    smooth->SetConvergence(0.0);
-    smooth->SetRelaxationFactor(0.1);
     smooth->Update();
     m_polydata->DeepCopy(smooth->GetOutput());
     reamwidget->m_lock.lock();
