@@ -2,3 +2,4 @@ file(COPY ${CMAKE_SOURCE_DIR}/dependence/script/postEvent.bat DESTINATION ${CMAK
 add_subdirectory(PluginManager)
 add_subdirectory(PluginExample)
 add_subdirectory(PluginPolyDataToImage)
+add_subdirectory(PluginSharedDataStorage)

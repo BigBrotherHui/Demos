@@ -32,7 +32,6 @@ Widget::Widget(QWidget *parent)
                     {
                         ui->listWidget->addItem(plugin->get_name());
                         ui->stackedWidget->insertWidget(0, plugin->createWidget());
-                        plugin->createWidget()->show();
                     }
                 }
                 else

@@ -51,7 +51,7 @@
          </size>
         </property>
         <property name="text">
-         <string>卸载所有插件你</string>
+         <string>卸载所有插件</string>
         </property>
        </widget>
       </item>
