@@ -6,12 +6,14 @@
 #include "PluginInterface.h"
 #include "PluginManager.h"
 #include <QModelIndex>
-
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
+    QList<int> sizes;
+    sizes << 100 << 1000;
+    ui->splitter->setSizes(sizes);
     connect(ui->pushButton_broadcast, &QPushButton::clicked, this, [&]
         {
             for(int i=0;i<ui->stackedWidget->count();++i)

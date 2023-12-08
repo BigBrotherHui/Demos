@@ -12,36 +12,11 @@ typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron_3;
 namespace PMP = CGAL::Polygon_mesh_processing;
 namespace params = PMP::parameters;
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Surface_mesh<K::Point_3> SurfaceMesh;
-typedef CGAL::Polyhedron_3<K> Polyhedron;
+typedef CGAL::Surface_mesh<Kernel::Point_3> SurfaceMesh;
 typedef SurfaceMesh::Vertex_index vertex_descriptor;
 typedef SurfaceMesh::Face_index face_descriptor;
-typedef CGAL::Surface_mesh<Kernel::Point_3> Mesh;
-typedef Mesh::Property_map<face_descriptor, double> Face_area_map;
-#define dot(u,v)   ((u).x() * (v).x() + (u).y() * (v).y() + (u).z() * (v).z())
-#define norm(v)    sqrt(dot(v, v))  // norm = length of vector
-#define d(u, v)     norm(u - v)       // distance = norm of difference
-float pbase_Plane(K::Point_3 P, K::Plane_3 PL, K::Point_3* B)
-{
-    float    sb, sn, sd;
-    K::Vector_3 n = PL.orthogonal_vector();
-    K::Vector_3 t_p_v0 = (P - PL.point());
-    sn = -dot(n, t_p_v0);
-    sd = dot(n, n);
-    sb = sn / sd;
-    * B = P + sb * n;
-    return d(P, *B);
-}
-struct Compute_area
-{
-    double operator()(const Polyhedron::Facet& f) const {
-        return K::Compute_area_3()(
-            f.halfedge()->vertex()->point(),
-            f.halfedge()->next()->vertex()->point(),
-            f.halfedge()->opposite()->vertex()->point());
-    }
-};
+typedef SurfaceMesh::Property_map<face_descriptor, double> Face_area_map;
+
 int main()
 {
     //读取模型
