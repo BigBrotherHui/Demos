@@ -13,6 +13,7 @@ class PlUGINSHAREDDAtASTORAGE_EXPORT PluginSharedDataStorage : public QObject,pu
 
 public:
     PluginSharedDataStorage();
+    ~PluginSharedDataStorage();
     QString get_name() const
     {
         return "PluginSharedDataStorage";

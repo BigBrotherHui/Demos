@@ -29,6 +29,7 @@ public:
     virtual void recMsgfromManager(PluginMetaData) = 0;//接收到来自创建管理器的消息
     virtual void sendMsg2Manager(PluginMetaData)   = 0;//给插件管理器发消息
 };
+Q_DECLARE_INTERFACE(PluginInterface, "org.galaxyworld.plugins.PluginInterface/1.0")
 
 class PluginUIInterface : public PluginInterface
 {
@@ -44,6 +45,5 @@ public:
         return nullptr;
     }
 };
-
 Q_DECLARE_INTERFACE(PluginUIInterface,"org.galaxyworld.plugins.PluginUIInterface/1.0")
 #endif // PLUGININTERFACE_H

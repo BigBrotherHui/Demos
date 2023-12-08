@@ -13,6 +13,7 @@ class PLUGINEXAMPLE_EXPORT Plugin : public QObject,public PluginUIInterface
 
 public:
     Plugin();
+    ~Plugin();
     QString get_name() const
     {
         return "PluginExample";

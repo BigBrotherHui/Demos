@@ -3,7 +3,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QApplication>
-
+#include <QThread>
 PluginManager *PluginManager::m_instance=nullptr;
 
 PluginManager::PluginManager(QObject *parent) : QObject(parent)
@@ -82,11 +82,16 @@ void PluginManager::unloadPlugin(const QString &filepath)
 {
     QPluginLoader *loader = m_loaders.value(filepath);
     //卸载插件，并从内部数据结构中移除
+    delete loader->instance();
     if(loader->unload())
     {
         m_loaders.remove(filepath);
+        m_names.remove(filepath);
         delete loader;
         loader = nullptr;
+    }else
+    {
+        qDebug() << "unload failed:"<<loader->errorString();
     }
 }
 

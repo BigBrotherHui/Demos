@@ -66,52 +66,5 @@ void Widget::on_pushButton_3_clicked()
 {
     PluginManager * pm = PluginManager::instance();
     pm->unloadAllPlugins();
-}
-
-//插件01发消息
-void Widget::on_pushButton_2_clicked()
-{
-    PluginManager * pm = PluginManager::instance();
-    auto loader = pm->getPlugin("Plugin01");
-    if(loader)
-    {
-        PluginInterface *plugin = dynamic_cast<PluginInterface *>(loader->instance());
-        PluginMetaData m;
-        m.dest = "Plugin02";
-        m.from = "Plugin01";
-        m.msg = "插件1给插件2发的消息";
-        plugin->sendMsg2Manager(m);
-    }
-    else
-        qDebug()<<"插件不存在";
-}
-
-void Widget::on_pushButton_4_clicked()
-{
-    PluginManager * pm = PluginManager::instance();
-    auto loader = pm->getPlugin("Plugin02");
-    if(loader)
-    {
-        PluginInterface *plugin = dynamic_cast<PluginInterface *>(loader->instance());
-        PluginMetaData m;
-        m.dest = "Plugin01";
-        m.from = "Plugin02";
-        m.msg = "插件2给插件1发的消息";
-        emit plugin->sendMsg2Manager(m);
-    }
-}
-
-void Widget::on_pushButton_20_clicked()
-{
-    PluginManager * pm = PluginManager::instance();
-    auto loader = pm->getPlugin("Plugin_widget");
-    if(loader)
-    {
-        PluginInterface *plugin = dynamic_cast<PluginInterface *>(loader->instance());
-        PluginMetaData m;
-        m.dest = "Plugin_widget";
-        m.from = "";
-        m.msg = "show";
-        emit plugin->sendMsg2Manager(m);
-    }
+    ui->listWidget->clear();
 }

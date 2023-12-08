@@ -17,11 +17,11 @@ file(GLOB_RECURSE QRC_FILES "*.qrc")
 set(PROJECT_SOURCES
         ${SOURCE_FILES} ${HEADER_FILES} ${UI_FILES} ${QRC_FILES}
 )
-
 source_group("Header Files" REGULAR_EXPRESSION ".h$")
 source_group("Source Files" FILES ${SRC_FILES})
 source_group("Forms" REGULAR_EXPRESSION ".ui$")
-source_group("Generated Files" REGULAR_EXPRESSION "ui_.*\\.h$|moc.*\\.cpp$|\\.stamp$|\\.rule$")
+source_group("Generated Files" REGULAR_EXPRESSION "ui_.*\\.h$|moc.*\\.cpp$|\\.stamp$|\\.rule$|qrc_.*")
+source_group("Resources" REGULAR_EXPRESSION ".qrc$")
 include_directories(${CMAKE_SOURCE_DIR}/Plugins/CommonHeader)
 add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCES})
 target_compile_definitions(${PROJECT_NAME} PUBLIC PLUGINEXAMPLE_DLL)
