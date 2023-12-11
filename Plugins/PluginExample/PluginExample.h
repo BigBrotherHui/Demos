@@ -14,7 +14,7 @@ class PLUGINEXAMPLE_EXPORT Plugin : public QObject,public PluginUIInterface
 public:
     Plugin();
     ~Plugin();
-    QString get_name() const
+    QString get_name() const 
     {
         return "PluginExample";
     }
@@ -31,7 +31,6 @@ public:
 signals:
     void sendMsg2Manager(PluginMetaData) Q_DECL_OVERRIDE;
 private:
-    QWidget* m_widget{nullptr};
 };
 
 #endif // PLUGIN_H

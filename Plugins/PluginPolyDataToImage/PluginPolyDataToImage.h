@@ -35,7 +35,6 @@ signals:
 private slots:
 
 private:
-    QWidget* m_widget{nullptr};
 };
 
 #endif // WIDGET_H

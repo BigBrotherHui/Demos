@@ -20,6 +20,14 @@ struct PluginMetaData
 };
 Q_DECLARE_METATYPE(PluginMetaData);//确保类型可以通过信号槽传递
 
+class WidgetBase : public QWidget {
+public:
+    WidgetBase(QWidget* parent = nullptr) :QWidget(parent) {}
+    virtual ~WidgetBase(){}
+protected:
+    virtual void processEvent(const PluginMetaData&)=0;
+};
+
 class PluginInterface
 {
 public:
@@ -35,15 +43,16 @@ class PluginUIInterface : public PluginInterface
 {
 public:
     virtual ~PluginUIInterface() {
-        QWidget* w = createWidget();
-        if (!w) {
-            w->deleteLater();
-            w = nullptr;
+        if (m_widget) {
+            delete m_widget;
+            m_widget = nullptr;
         }
     }
     virtual QWidget* createWidget() {
         return nullptr;
     }
+protected:
+    WidgetBase* m_widget{ nullptr };
 };
-Q_DECLARE_INTERFACE(PluginUIInterface,"org.galaxyworld.plugins.PluginUIInterface/1.0")
+Q_DECLARE_INTERFACE(PluginUIInterface, "org.galaxyworld.plugins.PluginUIInterface/1.0")
 #endif // PLUGININTERFACE_H

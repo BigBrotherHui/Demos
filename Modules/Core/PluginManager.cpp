@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QApplication>
 #include <QThread>
+#include <QProcess>
 PluginManager *PluginManager::m_instance=nullptr;
 
 PluginManager::PluginManager(QObject *parent) : QObject(parent)
@@ -46,6 +47,7 @@ void PluginManager::loadPlugin(const QString &filepath)
         return;
     //加载插件
     QPluginLoader *loader = new QPluginLoader(filepath);
+    loader->setLoadHints(0);//只有加上这句话才可以在unload之后真正卸载该dll（即可以删除它）
     QString plugin_name;
     if(loader->load())
     {
@@ -82,7 +84,6 @@ void PluginManager::unloadPlugin(const QString &filepath)
 {
     QPluginLoader *loader = m_loaders.value(filepath);
     //卸载插件，并从内部数据结构中移除
-    delete loader->instance();
     if(loader->unload())
     {
         m_loaders.remove(filepath);

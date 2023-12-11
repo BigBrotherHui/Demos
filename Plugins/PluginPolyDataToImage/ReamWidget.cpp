@@ -2,7 +2,6 @@
 #include <QDir>
 #include <QDebug>
 #include <QPluginLoader>
-#include "PluginInterface.h"
 
 #include <qapplication>
 #include <vtkInformation.h>
@@ -24,6 +23,9 @@
 #include <QtConcurrent/QtConcurrent>
 #include <vtkSTLWriter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
+void ReamWidget::processEvent(const PluginMetaData&)
+{
+}
 vtkSmartPointer<vtkImageData> ReamWidget::generateImageData()
 {
     vtkSmartPointer<vtkImageData> ret = vtkSmartPointer<vtkImageData>::New();
@@ -342,7 +344,7 @@ void ReamWidget::slot_render()
 }
 
 ReamWidget::ReamWidget(QWidget *parent)
-    : QWidget(parent)
+    : WidgetBase(parent)
 {
     QmitkRegisterClasses();
     vtkOutputWindow::SetGlobalWarningDisplay(0);

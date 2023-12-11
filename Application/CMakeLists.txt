@@ -1,3 +1,3 @@
 add_subdirectory(FillHoleApp)
-add_subdirectory(PluginsViewerApp)
+add_subdirectory(ViewerApp)
 add_subdirectory(CgalDemoApp)

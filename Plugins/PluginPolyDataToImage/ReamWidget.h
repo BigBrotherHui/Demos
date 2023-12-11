@@ -15,12 +15,13 @@
 #include <QThreadPool>
 #include <QQueue>
 #include <vtkWindowedSincPolyDataFilter.h>
+#include "PluginInterface.h"
 
 class QmitkRenderWindow;
 class PluginManager;
 class TimerThread;
 class QThread;
-class ReamWidget : public QWidget
+class ReamWidget : public WidgetBase
 {
     Q_OBJECT
 
@@ -28,6 +29,7 @@ public:
     ReamWidget(QWidget *parent = nullptr);
     ~ReamWidget();
 protected:
+    void processEvent(const PluginMetaData&) override;
     vtkSmartPointer<vtkImageData> generateImageData();
     void polyDataToImageData(vtkSmartPointer<vtkPolyData> polydata,
         vtkSmartPointer<vtkImageData> imageData,

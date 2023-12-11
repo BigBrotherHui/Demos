@@ -4,10 +4,10 @@
 #include <QObject>
 #include <QHash>
 #include "PluginInterface.h"
-#include "Plugins_global.h"
+#include "Core_global.h"
 class QPluginLoader;
 
-class PLUGINMANAGER_EXPORT PluginManager : public QObject
+class CORE_EXPORT PluginManager : public QObject
 {
     Q_OBJECT
 

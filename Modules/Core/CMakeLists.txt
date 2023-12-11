@@ -1,4 +1,4 @@
-project(PluginManager VERSION 0.1 LANGUAGES CXX)
+project(Core VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -22,10 +22,10 @@ source_group("Header Files" REGULAR_EXPRESSION ".h$")
 source_group("Source Files" FILES ${SRC_FILES})
 source_group("Forms" REGULAR_EXPRESSION ".ui$")
 source_group("Generated Files" REGULAR_EXPRESSION "ui_.*\\.h$|moc.*\\.cpp$|\\.stamp$|\\.rule$")
-include_directories(${CMAKE_SOURCE_DIR}/Plugins/CommonHeader)
+include_directories(${CMAKE_SOURCE_DIR}/CommonHeader)
 add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCES})
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC PLUGINMANAGER_DLL)
+target_compile_definitions(${PROJECT_NAME} PUBLIC CORE_DLL)
 #设置输出目录（属性-》常规-》输出目录）（不需要改动）
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>
@@ -42,6 +42,6 @@ else()
     # ...
 endif()
 # 设置筛选器
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Plugins")
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Modules")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core)

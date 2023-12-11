@@ -3,10 +3,9 @@
 #include <QDir>
 #include <QDebug>
 #include <QPluginLoader>
-#include "PluginInterface.h"
 #include <iostream>
 Widget::Widget(QWidget *parent)
-    : QWidget(parent)
+    : WidgetBase(parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
@@ -15,4 +14,8 @@ Widget::Widget(QWidget *parent)
 Widget::~Widget()
 {
     delete ui;
+}
+
+void Widget::processEvent(const PluginMetaData&)
+{
 }

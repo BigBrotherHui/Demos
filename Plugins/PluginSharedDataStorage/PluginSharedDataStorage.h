@@ -31,7 +31,6 @@ public:
 signals:
     void sendMsg2Manager(PluginMetaData) Q_DECL_OVERRIDE;
 private:
-    QWidget* m_widget{nullptr};
 };
 
 #endif // PLUGIN_H

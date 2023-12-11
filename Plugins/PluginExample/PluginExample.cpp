@@ -7,11 +7,6 @@ Plugin::Plugin()
 
 Plugin::~Plugin()
 {
-	if(m_widget)
-	{
-		delete m_widget;
-		m_widget = nullptr;
-	}
 }
 
 QWidget* Plugin::createWidget()

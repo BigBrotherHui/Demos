@@ -1,23 +1,27 @@
 #pragma once
 
-#include <QWidget>
+#include "PluginInterface.h"
 
 class PluginManager;
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
 QT_END_NAMESPACE
 
-class Widget : public QWidget
+class Widget : public WidgetBase
 {
     Q_OBJECT
 
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
+protected:
+    void processEvent(const PluginMetaData&) override;
 protected slots:
-    void slot_btn_clicked();
+    void slot_simplify_clicked();
     void slot_cut_clicked();
     void slot_fillhole_clicked();
+    void slot_load_clicked();
+    void slot_offset_clicked();
 private slots:
 
 private:

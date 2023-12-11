@@ -10,11 +10,6 @@ PluginPolyDataToImage::PluginPolyDataToImage()
 
 PluginPolyDataToImage::~PluginPolyDataToImage()
 {
-	if (m_widget)
-	{
-		delete m_widget;
-		m_widget = nullptr;
-	}
 }
 
 QWidget* PluginPolyDataToImage::createWidget()

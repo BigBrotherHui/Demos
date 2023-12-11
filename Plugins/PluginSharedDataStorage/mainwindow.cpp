@@ -13,7 +13,7 @@
 #include <QmitkRegisterClasses.h>
 //#include <mitkSplineVtkMapper3D.h>
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : WidgetBase(parent)
     , ui(new Ui::MainWindow)
 {
     QmitkRegisterClasses();
@@ -45,6 +45,10 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::processEvent(const PluginMetaData&)
+{
 }
 
 

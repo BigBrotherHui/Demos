@@ -10,11 +10,6 @@ PluginCgalDemo::PluginCgalDemo()
 
 PluginCgalDemo::~PluginCgalDemo()
 {
-	if (m_widget)
-	{
-		delete m_widget;
-		m_widget = nullptr;
-	}
 }
 
 QWidget* PluginCgalDemo::createWidget()

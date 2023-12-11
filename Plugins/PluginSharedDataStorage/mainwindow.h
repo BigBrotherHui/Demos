@@ -3,19 +3,21 @@
 
 #include <QMainWindow>
 #include <mitkStandaloneDataStorage.h>
+#include "PluginInterface.h"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 class QmitkStdMultiWidget;
 class QmitkRenderWindow;
-class MainWindow : public QMainWindow
+class MainWindow : public WidgetBase
 {
     Q_OBJECT
 
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
+protected:
+    void processEvent(const PluginMetaData&) override;
 private slots:
     void on_pushButton_loaddata_clicked();
     void on_pushButton_addpoint_clicked();
