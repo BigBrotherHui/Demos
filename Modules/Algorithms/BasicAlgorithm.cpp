@@ -102,7 +102,7 @@ Eigen::Matrix4d BasicAlgorithm::ConvertCoordstoTransform(Eigen::Vector3d& o, Eig
 	return transform;
 }
 
-void BasicAlgorithm::projectToPlane(const double x[3], const double origin[3], const double normal[3], double xproj[3])
+void BasicAlgorithm::ProjectToPlane(const double x[3], const double origin[3], const double normal[3], double xproj[3])
 {
 	double t, xo[3];
 

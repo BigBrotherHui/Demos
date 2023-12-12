@@ -15,7 +15,7 @@ public:
 	static Eigen::Matrix3d GenerateRotationMatrix(const Eigen::Vector3d& vectorBefore, const Eigen::Vector3d& vectorAfter);
 	static double GetPointToLineDistance(double* point, double* linePoint_0, double* linePoint_1);
 	static Eigen::Matrix4d ConvertCoordstoTransform(Eigen::Vector3d& o, Eigen::Vector3d& x, Eigen::Vector3d& y, Eigen::Vector3d& z);
-	static void projectToPlane(const double x[3], const double origin[3], const double normal[3], double xproj[3]);
+	static void ProjectToPlane(const double x[3], const double origin[3], const double normal[3], double xproj[3]);
 	static double AngleBetween2Vector(const double vec1[3], const double vec2[3], bool radian);
 	/**
 	 * @brief º∆À„¡Ωµ„æ‡¿Î
