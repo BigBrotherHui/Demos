@@ -4,12 +4,14 @@
 #include <QDebug>
 #include <QApplication>
 #include <QThread>
-#include <QProcess>
+#include <QFileSystemWatcher>
 PluginManager *PluginManager::m_instance=nullptr;
 
 PluginManager::PluginManager(QObject *parent) : QObject(parent)
 {
-
+    m_file_system_watcher = FileSystemWatcher::instance();
+    m_file_system_watcher->addWatchPath(qApp->applicationDirPath() + "/plugins");
+    connect(m_file_system_watcher, &FileSystemWatcher::signal_directoryUpdated, this, &PluginManager::slot_directoryUpdated);
 }
 
 PluginManager::~PluginManager()
@@ -27,7 +29,6 @@ PluginManager* PluginManager::instance()
 //加载所有插件
 void PluginManager::loadAllPlugins()
 {
-    unloadAllPlugins();
     QDir pluginsdir(qApp->applicationDirPath());
     pluginsdir.cd("plugins");
 
@@ -41,10 +42,15 @@ void PluginManager::loadAllPlugins()
 }
 
 //加载其中某个插件
-void PluginManager::loadPlugin(const QString &filepath)
+bool PluginManager::loadPlugin(const QString &filepath)
 {
     if(!QLibrary::isLibrary(filepath))
-        return;
+        return false;
+    if(m_names.contains(filepath))
+    {
+        qDebug() << "plugin " << filepath << " existed";
+        return false;
+    }
     //加载插件
     QPluginLoader *loader = new QPluginLoader(filepath);
     loader->setLoadHints(0);//只有加上这句话才可以在unload之后真正卸载该dll（即可以删除它）
@@ -58,8 +64,9 @@ void PluginManager::loadPlugin(const QString &filepath)
             m_loaders.insert(filepath, loader);
             m_names.insert(filepath,plugin_name);
             qDebug()<<"插件名称："<<plugin->get_name()<<"插件信息："<<plugin->show_text();
-
             connect(loader->instance(),SIGNAL(sendMsg2Manager(PluginMetaData)),this,SLOT(recMsgfromPlugin(PluginMetaData)));
+            qDebug() << filepath << " loaded";
+            return true;
         }
         else
         {
@@ -71,6 +78,7 @@ void PluginManager::loadPlugin(const QString &filepath)
     {
         qDebug()<<"loadPlugin:"<<filepath<<loader->errorString();
     }
+    return false;
 }
 
 //卸载所有插件
@@ -80,8 +88,10 @@ void PluginManager::unloadAllPlugins()
         unloadPlugin(filepath);
 }
 
-void PluginManager::unloadPlugin(const QString &filepath)
+bool PluginManager::unloadPlugin(const QString &filepath)
 {
+    if (!m_loaders.contains(filepath))
+        return false; 
     QPluginLoader *loader = m_loaders.value(filepath);
     //卸载插件，并从内部数据结构中移除
     if(loader->unload())
@@ -90,10 +100,18 @@ void PluginManager::unloadPlugin(const QString &filepath)
         m_names.remove(filepath);
         delete loader;
         loader = nullptr;
+        qDebug() << filepath << " unloaded";
+        return true;
     }else
     {
         qDebug() << "unload failed:"<<loader->errorString();
+        return false;
     }
+}
+
+bool PluginManager::unloadPlugin(QPluginLoader* loader)
+{
+    return unloadPlugin(m_names.key(getPluginName(loader).toString()));
 }
 
 //获取某个插件名称
@@ -131,4 +149,27 @@ void PluginManager::recMsgfromPlugin(PluginMetaData metadata)
             interface->recMsgfromManager(metadata);//转发给对应插件
         }
     }
+}
+
+void PluginManager::slot_directoryUpdated(int optype, const QStringList& names)
+{
+	if(optype==0)//添加
+	{
+        for (auto name : names)
+        {
+            loadPlugin(name);
+        }
+	}else if(optype==1)//删除
+	{
+        for (auto name : names)
+        {
+            unloadPlugin(name);
+        }
+	}else if(optype==2)//修改
+	{
+        for(auto name : names)
+        {
+            loadPlugin(name);
+        }
+	}
 }

@@ -5,8 +5,9 @@
 #include <QHash>
 #include "PluginInterface.h"
 #include "Core_global.h"
+#include "FileSystemWatcher.h"
 class QPluginLoader;
-
+class QFileSystemWatcher;
 class CORE_EXPORT PluginManager : public QObject
 {
     Q_OBJECT
@@ -15,15 +16,17 @@ public:
     static PluginManager* instance();
 
     void loadAllPlugins();
-    void loadPlugin(const QString &filepath);
-    void unloadPlugin(const QString &filepath);
+    bool loadPlugin(const QString &filepath);
+    bool unloadPlugin(const QString &filepath);
+    bool unloadPlugin(QPluginLoader* loader);
     void unloadAllPlugins();
     QPluginLoader* getPlugin(const QString &name);
     QVariant getPluginName(QPluginLoader *loader);
 	void getAllPlugins(std::vector<QPluginLoader*> &ret);
 public slots:
     void recMsgfromPlugin(PluginMetaData metadata);
-
+protected slots:
+    void slot_directoryUpdated(int optype,const QStringList &names);
 private:
     explicit PluginManager(QObject *parent = nullptr);
     ~PluginManager();
@@ -42,6 +45,7 @@ private:
         }
     };
     static GarbageCollector gc;
+    FileSystemWatcher *m_file_system_watcher;
 };
 
 #endif // PLUGINMANAGER_H

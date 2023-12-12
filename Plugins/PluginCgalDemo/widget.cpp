@@ -178,8 +178,3 @@ void Widget::slot_simplify_clicked()
     static_cast<mitk::Surface*>(m_impl->m_ds->GetNamedNode("node")->GetData())->SetVtkPolyData(vtkCGALPolyDataAlgorithm::toVTK(CGAL_Surface.get()));
     mitk::RenderingManager::GetInstance()->RequestUpdate(m_impl->m_w->GetVtkRenderWindow());
 }
-
-void Widget::processEvent(const PluginMetaData&)
-{
-	
-}

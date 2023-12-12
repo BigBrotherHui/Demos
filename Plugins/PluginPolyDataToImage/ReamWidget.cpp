@@ -23,9 +23,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <vtkSTLWriter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
-void ReamWidget::processEvent(const PluginMetaData&)
-{
-}
+
 vtkSmartPointer<vtkImageData> ReamWidget::generateImageData()
 {
     vtkSmartPointer<vtkImageData> ret = vtkSmartPointer<vtkImageData>::New();
@@ -380,8 +378,6 @@ ReamWidget::~ReamWidget()
 {
     m_thread->quit();
     m_thread->wait();
-    m_thread->deleteLater();
     m_renderThread->quit();
     m_renderThread->wait();
-    m_renderThread->deleteLater();
 }

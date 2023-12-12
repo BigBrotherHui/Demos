@@ -17,7 +17,6 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 protected:
-    void processEvent(const PluginMetaData&) override;
 private slots:
     void on_pushButton_loaddata_clicked();
     void on_pushButton_addpoint_clicked();

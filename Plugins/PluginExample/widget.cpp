@@ -15,7 +15,3 @@ Widget::~Widget()
 {
     delete ui;
 }
-
-void Widget::processEvent(const PluginMetaData&)
-{
-}

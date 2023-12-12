@@ -25,7 +25,6 @@ public:
     WidgetBase(QWidget* parent = nullptr) :QWidget(parent) {}
     virtual ~WidgetBase(){}
 protected:
-    virtual void processEvent(const PluginMetaData&)=0;
 };
 
 class PluginInterface

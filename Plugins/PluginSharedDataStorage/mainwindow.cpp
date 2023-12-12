@@ -47,11 +47,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::processEvent(const PluginMetaData&)
-{
-}
-
-
 void MainWindow::on_pushButton_loaddata_clicked()
 {
     mitk::IOUtil::Load("D:/Images/knee-small",*ds1);

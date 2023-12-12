@@ -15,7 +15,6 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 protected:
-    void processEvent(const PluginMetaData&) override;
 protected slots:
     void slot_simplify_clicked();
     void slot_cut_clicked();

@@ -29,7 +29,6 @@ public:
     ReamWidget(QWidget *parent = nullptr);
     ~ReamWidget();
 protected:
-    void processEvent(const PluginMetaData&) override;
     vtkSmartPointer<vtkImageData> generateImageData();
     void polyDataToImageData(vtkSmartPointer<vtkPolyData> polydata,
         vtkSmartPointer<vtkImageData> imageData,

@@ -16,7 +16,6 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 protected:
-    void processEvent(const PluginMetaData&) override;
 private slots:
 
 private:
