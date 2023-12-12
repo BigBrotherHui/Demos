@@ -90,6 +90,8 @@ void PluginManager::unloadAllPlugins()
 
 bool PluginManager::unloadPlugin(const QString &filepath)
 {
+    if (!QFile::exists(filepath))
+        return false;
     if (!m_loaders.contains(filepath))
         return false; 
     QPluginLoader *loader = m_loaders.value(filepath);

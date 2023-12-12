@@ -44,6 +44,12 @@ void Widget::on_pushButton_clicked()
 
 void Widget::on_listWidget_customContextMenuRequested(const QPoint& pos)
 {
+    static QDateTime dt = QDateTime::currentDateTime();
+    static bool first{1};
+    if (!first && dt.msecsTo(QDateTime::currentDateTime()) < 500)
+        return;
+    first = false;
+    dt = QDateTime::currentDateTime();
     QListWidgetItem* curItem = ui->listWidget->itemAt(pos);
     if (curItem == nullptr)
         return;
@@ -98,7 +104,6 @@ void Widget::slot_unloadAction_triggered()
     if(PluginManager::instance()->unloadPlugin(PluginManager::instance()->getPlugin(ui->listWidget->currentItem()->text())))
     {
         ui->listWidget->takeItem(ui->listWidget->row(ui->listWidget->currentItem()));
-        m_popMenu->hide();
     }else
     {
         qDebug() << "unload " << ui->listWidget->currentItem()->text() << " failed";
