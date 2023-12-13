@@ -1,13 +1,12 @@
-#ifndef WIDGET_H
-#define WIDGET_H
+#pragma once
 
+#include <QWidget>
+#include <mitkStandaloneDataStorage.h>
+#include <mitkDataNode.h>
 #include "PluginInterface.h"
-
-class PluginManager;
-QT_BEGIN_NAMESPACE
-namespace Ui { class Widget; }
-QT_END_NAMESPACE
-
+#include <mitkDisplayActionEventBroadcast.h>
+#include <mitkDisplayActionEventHandler.h>
+class QmitkRenderWindow;
 class Widget : public WidgetBase
 {
     Q_OBJECT
@@ -15,10 +14,16 @@ class Widget : public WidgetBase
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
+    void addNode(mitk::DataNode::Pointer dt);
+    void addNodeByPoint(double *pt,std::string name);
+    mitk::DataNode::Pointer getNode(std::string name);
+    void getPointByName(double *,std::string name);
 protected:
 private slots:
 
 private:
-    Ui::Widget *ui;
+    QmitkRenderWindow* m_rw;
+    mitk::StandaloneDataStorage::Pointer m_ds;
+    mitk::DisplayActionEventBroadcast::Pointer m_DisplayActionEventBroadcast;
+    std::unique_ptr<mitk::DisplayActionEventHandler> m_DisplayActionEventHandler;
 };
-#endif // WIDGET_H

@@ -24,6 +24,72 @@
 #include <vtkSTLWriter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
 
+void ReamWidget::setTool(vtkSmartPointer<vtkPolyData> source)
+{
+    if(!m_tool)
+		m_tool = vtkSmartPointer<vtkPolyData>::New();
+    m_tool->DeepCopy(source);
+
+    mitk::DataNode::Pointer dt = m_ds->GetNamedNode("cutter");
+    if(!dt)
+    {
+        mitk::Surface::Pointer sur = mitk::Surface::New();
+        sur->SetVtkPolyData(m_tool);
+        mitk::DataNode::Pointer ddt = mitk::DataNode::New();
+        ddt->SetData(sur);
+        ddt->SetName("cutter");
+        m_ds->Add(ddt);
+    }else
+    {
+        mitk::Surface::Pointer sur = dynamic_cast<mitk::Surface*>(dt->GetData());
+        if(sur)
+        {
+            sur->SetVtkPolyData(m_tool);
+        }
+    }
+    
+}
+
+void ReamWidget::setToolMatrix(vtkSmartPointer<vtkMatrix4x4> mt)
+{
+    if (!m_tool_matrix)
+        m_tool_matrix = vtkSmartPointer<vtkMatrix4x4>::New();
+    m_tool_matrix->DeepCopy(mt);
+    m_ds->GetNamedNode("cutter")->GetData()->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(m_tool_matrix);
+    mitk::RenderingManager::GetInstance()->RequestUpdate(m_w->GetVtkRenderWindow());
+}
+
+void ReamWidget::updateResult()
+{
+    if (!m_sourceImage_generated)
+    {
+        generateSourceImage();
+        m_thread->start();
+        m_sourceImage_generated = 1;
+    }
+    static int i = 0;
+    ++i;
+    Task* task = new Task(transformPolyData(m_tool_matrix, m_tool), this, i);
+    QThreadPool::globalInstance()->start(task);
+}
+
+void ReamWidget::setSource(vtkSmartPointer<vtkPolyData> source)
+{
+    if (!m_source)
+        m_source = vtkSmartPointer<vtkPolyData>::New();
+    m_source->DeepCopy(source);
+}
+
+void ReamWidget::setProsthesis(vtkSmartPointer<vtkPolyData> source, vtkSmartPointer<vtkMatrix4x4> mt)
+{
+    if (!m_prosthesis)
+        m_prosthesis = vtkSmartPointer<vtkPolyData>::New();
+    if (!m_prosthesis_matrix)
+        m_prosthesis_matrix = vtkSmartPointer<vtkMatrix4x4>::New();
+    m_prosthesis->DeepCopy(source);
+    m_prosthesis_matrix->DeepCopy(mt);
+}
+
 vtkSmartPointer<vtkImageData> ReamWidget::generateImageData()
 {
     vtkSmartPointer<vtkImageData> ret = vtkSmartPointer<vtkImageData>::New();
@@ -63,8 +129,12 @@ void ReamWidget::polyDataToImageData(vtkSmartPointer<vtkPolyData> polydata,
     imagestencil->SetBackgroundValue(outval);
     imagestencil->Update();
 }
-vtkSmartPointer<vtkPolyData> ReamWidget::transformPolyData(vtkMatrix4x4* mt, vtkPolyData* p)
+vtkSmartPointer<vtkPolyData> ReamWidget::transformPolyData(vtkSmartPointer<vtkMatrix4x4> mt, vtkSmartPointer<vtkPolyData> p)
 {
+    if (!p)
+        return nullptr;
+    if (!mt)
+        mt = vtkSmartPointer<vtkMatrix4x4>::New();
     vtkSmartPointer<vtkPolyData> ret = vtkSmartPointer<vtkPolyData>::New();
     vtkSmartPointer<vtkTransform> transform= vtkSmartPointer<vtkTransform>::New();
     transform->SetMatrix(mt);
@@ -76,176 +146,128 @@ vtkSmartPointer<vtkPolyData> ReamWidget::transformPolyData(vtkMatrix4x4* mt, vtk
     return ret;
 }
 
-void ReamWidget::hideEvent(QHideEvent* event)
+void ReamWidget::generateSourceImage()
 {
-    //return hideEvent(event);
-}
+    if (m_sourceImage_generated)
+        return;
+    auto prosthesis = transformPolyData(m_prosthesis_matrix, m_prosthesis);
+    double* bounds = prosthesis->GetBounds();
+    mDimensions[0] = std::ceil((bounds[1] - bounds[0]) / mSpacing[0]) + 10;
+    mDimensions[1] = std::ceil((bounds[3] - bounds[2]) / mSpacing[1]) + 10;
+    mDimensions[2] = std::ceil((bounds[5] - bounds[4]) / mSpacing[2]) + 10;
+    mExtent[1] = mDimensions[0];
+    mExtent[3] = mDimensions[1];
+    mExtent[5] = mDimensions[2];
+    mOrigin[0] = 0.5 * mSpacing[0] + bounds[0];
+    mOrigin[1] = 0.5 * mSpacing[1] + bounds[2];
+    mOrigin[2] = 0.5 * mSpacing[2] + bounds[4];
 
-void ReamWidget::showEvent(QShowEvent* event)
-{
-    //return QWidget::showEvent(event);
-}
+    vtkSmartPointer<vtkImageStencil> stencil = vtkSmartPointer<vtkImageStencil>::New();
+    vtkSmartPointer<vtkPolyDataToImageStencil> pti = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    vtkSmartPointer<vtkImageData> img = generateImageData();
+    polyDataToImageData(prosthesis, img, pti, stencil);
 
-void ReamWidget::generateSmoothSurface(vtkSmartPointer<vtkPolyData> p)
-{
-    qDebug() << p->GetNumberOfPoints();
-}
+    vtkSmartPointer<vtkImageStencil> stencil_femur = vtkSmartPointer<vtkImageStencil>::New();
+    vtkSmartPointer<vtkPolyDataToImageStencil> pti_femur = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    vtkSmartPointer<vtkImageData> img_femur = generateImageData();
+    polyDataToImageData(m_source, img_femur, pti_femur, stencil_femur);
 
-void ReamWidget::slot_btn_clicked()
-{
-    if(!m_data_loaded)
-    {
-        vtkSmartPointer<vtkSTLReader> reader= vtkSmartPointer<vtkSTLReader>::New();
-        reader->SetFileName(QString(qApp->applicationDirPath()+"/stl/YS_NA_Tibia_PS_5_NA.STL").toStdString().c_str());
-        reader->Update();
+    vtkSmartPointer<vtkImageMathematics> m_imageMathematicsMultiply = vtkSmartPointer<vtkImageMathematics>::New();
+    m_imageMathematicsMultiply->SetInput1Data(stencil->GetOutput());
+    m_imageMathematicsMultiply->SetInput2Data(stencil_femur->GetOutput());
+    m_imageMathematicsMultiply->SetOperationToMultiply();
+    m_imageMathematicsMultiply->Update();
 
-        reader_cutter->SetFileName(QString(qApp->applicationDirPath() + "/stl/thinCutter.STL").toStdString().c_str());
-        reader_cutter->Update();
-
-        memcpy(vmt_tibia_prosthesis->GetData(), mt_tibia, sizeof(double) * 16);
-
-        vmt_cutter->DeepCopy(vmt_tibia_prosthesis);
-        double pt[3]{ -15.0517, -216.174, 1322.04 };
-        for(int i=0;i<3;++i)
-			vmt_cutter->SetElement(i, 3, pt[i]);
-        auto prosthesis = transformPolyData(vmt_tibia_prosthesis, reader->GetOutput());
-
-        double* bounds = prosthesis->GetBounds();
-        mDimensions[0] = std::ceil((bounds[1] - bounds[0]) / mSpacing[0]) + 10;
-        mDimensions[1] = std::ceil((bounds[3] - bounds[2]) / mSpacing[1]) + 10;
-        mDimensions[2] = std::ceil((bounds[5] - bounds[4]) / mSpacing[2]) + 10;
-        mExtent[1] = mDimensions[0];
-        mExtent[3] = mDimensions[1];
-        mExtent[5] = mDimensions[2];
-        mOrigin[0] = 0.5 * mSpacing[0] + bounds[0];
-        mOrigin[1] = 0.5 * mSpacing[1] + bounds[2];
-        mOrigin[2] = 0.5 * mSpacing[2] + bounds[4];
-
-        vtkSmartPointer<vtkImageStencil> stencil = vtkSmartPointer<vtkImageStencil>::New();
-        vtkSmartPointer<vtkPolyDataToImageStencil> pti = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
-        vtkSmartPointer<vtkImageData> img = generateImageData();
-        polyDataToImageData(prosthesis, img, pti, stencil);
-
-        vtkSmartPointer<vtkSTLReader> reader_femur= vtkSmartPointer<vtkSTLReader>::New();
-        reader_femur->SetFileName(QString(qApp->applicationDirPath() + "/stl/TibiaLeft_Cutted.stl").toStdString().c_str());
-        reader_femur->Update();
-
-        vtkSmartPointer<vtkImageStencil> stencil_femur = vtkSmartPointer<vtkImageStencil>::New();
-        vtkSmartPointer<vtkPolyDataToImageStencil> pti_femur = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
-        vtkSmartPointer<vtkImageData> img_femur = generateImageData();
-        polyDataToImageData(reader_femur->GetOutput(), img_femur, pti_femur, stencil_femur);
-
-        vtkSmartPointer<vtkImageMathematics> m_imageMathematicsMultiply = vtkSmartPointer<vtkImageMathematics>::New();
-        m_imageMathematicsMultiply->SetInput1Data(stencil->GetOutput());
-        m_imageMathematicsMultiply->SetInput2Data(stencil_femur->GetOutput());
-        m_imageMathematicsMultiply->SetOperationToMultiply();
-        m_imageMathematicsMultiply->Update();
-
-        m_imageMathematicsAdd->SetInput1Data(m_imageMathematicsMultiply->GetOutput());
-        m_imageMathematicsAdd->SetInput2Data(stencil_femur->GetOutput());
-        m_imageMathematicsAdd->SetOperationToAdd();
-        m_imageMathematicsAdd->Update();
+    m_imageMathematicsAdd->SetInput1Data(m_imageMathematicsMultiply->GetOutput());
+    m_imageMathematicsAdd->SetInput2Data(stencil_femur->GetOutput());
+    m_imageMathematicsAdd->SetOperationToAdd();
+    m_imageMathematicsAdd->Update();
 
 #pragma omp parallel for
-        for (int i = 0; i < mDimensions[2]; ++i) {
-            for (int j = 0; j < mDimensions[1]; ++j) {
-                for (int k = 0; k < mDimensions[0]; ++k) {
-                    uchar* pMultiply = (uchar*)(m_imageMathematicsMultiply->GetOutput()->GetScalarPointer(k, j, i));
-                    uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, i));
-                    if (*pMultiply == 1) {
-                        *pAll = 2;
-                    }
-                }
-            }
-        }
-#pragma omp parallel for
+    for (int i = 0; i < mDimensions[2]; ++i) {
         for (int j = 0; j < mDimensions[1]; ++j) {
             for (int k = 0; k < mDimensions[0]; ++k) {
-                uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, mDimensions[2] - 1));
-                if (*pAll == 1) {
-                    *pAll = 4;
-                }
-                pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, 0));
-                if (*pAll != 0) {
-                    *pAll = 4;
+                uchar* pMultiply = (uchar*)(m_imageMathematicsMultiply->GetOutput()->GetScalarPointer(k, j, i));
+                uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, i));
+                if (*pMultiply == 1) {
+                    *pAll = 2;
                 }
             }
         }
-#pragma omp parallel for
-        for (int j = 0; j < mDimensions[2]; ++j) {
-            for (int k = 0; k < mDimensions[0]; ++k) {
-                uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, 0, j));
-                if (*pAll == 1) {
-                    *pAll = 4;
-                }
-                pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, mDimensions[1] - 1, j));
-                if (*pAll == 1) {
-                    *pAll = 4;
-                }
-            }
-        }
-#pragma omp parallel for
-        for (int j = 0; j < mDimensions[2]; ++j) {
-            for (int k = 0; k < mDimensions[1]; ++k) {
-                uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(0, k, j));
-                if (*pAll == 1) {
-                    *pAll = 4;
-                }
-                pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(mDimensions[0] - 1, k, j));
-                if (*pAll == 1) {
-                    *pAll = 4;
-                }
-            }
-        }
-
-        m_imageMathematicsAdd->GetOutput()->Modified();
-        flying->SetInputData(m_imageMathematicsAdd->GetOutput());
-        flying->SetNumberOfContours(3);
-        flying->SetValue(0, 1);
-        flying->SetValue(1, 2);
-        flying->SetValue(2, 4);
-        flying->SetComputeGradients(false);
-        flying->SetComputeNormals(false);
-        flying->SetComputeScalars(true);
-        flying->Update();
-
-        smooth->SetInputData(flying->GetOutput());
-        smooth->SetNumberOfIterations(20);
-        smooth->SetConvergence(0.0);
-        smooth->SetRelaxationFactor(0.1);
-        smooth->Update();
-
-        {
-            mitk::Surface::Pointer sur = mitk::Surface::New();
-            sur->SetVtkPolyData(reader_cutter->GetOutput());
-            mitk::DataNode::Pointer dt = mitk::DataNode::New();
-            dt->SetData(sur);
-            dt->SetName("cutter");
-            m_ds->Add(dt);
-            dt->GetData()->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(vmt_cutter);
-        }
-
-        mitk::Surface::Pointer sur = mitk::Surface::New();
-        sur->SetVtkPolyData(smooth->GetOutput());
-        mitk::DataNode::Pointer dt = mitk::DataNode::New();
-        dt->SetData(sur);
-        m_ds->Add(dt);
-        dt->SetName("rest");
-        mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_w->GetVtkRenderWindow(), m_ds);
-        dt->SetMapper(2, mitk::CustomSurfaceVtkMapper3D::New());
-        vtkCamera *camera=m_w->GetRenderer()->GetVtkRenderer()->GetActiveCamera();
-        camera->SetViewUp(0, 1, 0);
-        camera->SetFocalPoint(smooth->GetOutput()->GetCenter());
-        camera->SetPosition(smooth->GetOutput()->GetCenter()[0], smooth->GetOutput()->GetCenter()[1], smooth->GetOutput()->GetCenter()[2] + 400);
-        m_w->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
     }
-    m_thread->start();
-    m_renderThread->start();
+#pragma omp parallel for
+    for (int j = 0; j < mDimensions[1]; ++j) {
+        for (int k = 0; k < mDimensions[0]; ++k) {
+            uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, mDimensions[2] - 1));
+            if (*pAll == 1) {
+                *pAll = 4;
+            }
+            pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, j, 0));
+            if (*pAll != 0) {
+                *pAll = 4;
+            }
+        }
+    }
+#pragma omp parallel for
+    for (int j = 0; j < mDimensions[2]; ++j) {
+        for (int k = 0; k < mDimensions[0]; ++k) {
+            uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, 0, j));
+            if (*pAll == 1) {
+                *pAll = 4;
+            }
+            pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(k, mDimensions[1] - 1, j));
+            if (*pAll == 1) {
+                *pAll = 4;
+            }
+        }
+    }
+#pragma omp parallel for
+    for (int j = 0; j < mDimensions[2]; ++j) {
+        for (int k = 0; k < mDimensions[1]; ++k) {
+            uchar* pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(0, k, j));
+            if (*pAll == 1) {
+                *pAll = 4;
+            }
+            pAll = (uchar*)(m_imageMathematicsAdd->GetOutput()->GetScalarPointer(mDimensions[0] - 1, k, j));
+            if (*pAll == 1) {
+                *pAll = 4;
+            }
+        }
+    }
+
+    m_imageMathematicsAdd->GetOutput()->Modified();
+    vtkNew<vtkDiscreteFlyingEdges3D> flying;
+    flying->SetInputData(m_imageMathematicsAdd->GetOutput());
+    flying->SetNumberOfContours(3);
+    flying->SetValue(0, 1);
+    flying->SetValue(1, 2);
+    flying->SetValue(2, 4);
+    flying->SetComputeGradients(false);
+    flying->SetComputeNormals(false);
+    flying->SetComputeScalars(true);
+    flying->Update();
+    vtkSmartPointer<vtkWindowedSincPolyDataFilter> smooth = vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
+    smooth->SetInputData(flying->GetOutput());
+    smooth->SetNumberOfIterations(20);
+    smooth->Update();
+
+    mitk::Surface::Pointer sur = mitk::Surface::New();
+    sur->SetVtkPolyData(smooth->GetOutput());
+    mitk::DataNode::Pointer dt = mitk::DataNode::New();
+    dt->SetData(sur);
+    m_ds->Add(dt);
+    dt->SetName("rest");
+    mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_w->GetVtkRenderWindow(), m_ds);
+    dt->SetMapper(2, mitk::CustomSurfaceVtkMapper3D::New());
+    vtkCamera *camera=m_w->GetRenderer()->GetVtkRenderer()->GetActiveCamera();
+    camera->SetViewUp(0, 1, 0);
+    camera->SetFocalPoint(smooth->GetOutput()->GetCenter());
+    camera->SetPosition(smooth->GetOutput()->GetCenter()[0], smooth->GetOutput()->GetCenter()[1], smooth->GetOutput()->GetCenter()[2] + 400);
+    m_w->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();
 }
 
 void ReamWidget::slot_timeout()
 {
-    //qDebug() << "start:"<<QDateTime::currentDateTime();
     m_lock.lock();
     if(m_map.size()==0)
     {
@@ -258,9 +280,8 @@ void ReamWidget::slot_timeout()
     m_lock.unlock();
     mitk::Surface::Pointer sur = static_cast<mitk::Surface*>(m_ds->GetNamedNode("rest")->GetData());
     sur->SetVtkPolyData(p);
-    m_ds->GetNamedNode("cutter")->GetData()->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(vmt_cutter);
+    m_ds->GetNamedNode("cutter")->GetData()->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(m_tool_matrix);
     mitk::RenderingManager::GetInstance()->RequestUpdate(m_w->GetVtkRenderWindow());
-    //qDebug() << "end:"<<QDateTime::currentDateTime();
 }
 
 void ReamWidget::Task::run()
@@ -321,26 +342,6 @@ void ReamWidget::Task::run()
     reamwidget->m_lock.unlock();
 }
 
-void ReamWidget::slot_render()
-{
-    Eigen::Vector3d v1{ -15.0517, -216.174, 1322.04 }, v2{ -24.1781, -210.9, 1323.7 };
-    Eigen::Vector3d dir = (v2 - v1).normalized();
-    for (int i = 0; i < 3; ++i)
-    {
-        vmt_cutter->SetElement(i, 3, vmt_cutter->GetElement(i, 3) + .1*dir[i]);
-    }
-    static int i = 0;
-    ++i;
-    if(i%300==0)
-    {
-        double pt[3]{ -15.0517, -216.174, 1322.04 };
-        for (int i = 0; i < 3; ++i)
-            vmt_cutter->SetElement(i, 3, pt[i]);
-    }
-    Task* task = new Task(transformPolyData(vmt_cutter, reader_cutter->GetOutput()),this,i);
-    QThreadPool::globalInstance()->start(task);
-}
-
 ReamWidget::ReamWidget(QWidget *parent)
     : WidgetBase(parent)
 {
@@ -348,21 +349,11 @@ ReamWidget::ReamWidget(QWidget *parent)
     vtkOutputWindow::SetGlobalWarningDisplay(0);
     QVBoxLayout* ly = new QVBoxLayout(this);
     m_w = new QmitkRenderWindow(this);
-    //m_w->setAttribute(Qt::WA_TransparentForMouseEvents);
     m_w->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
     m_ds = mitk::StandaloneDataStorage::New();
     m_w->GetRenderer()->SetDataStorage(m_ds);
     ly->addWidget(m_w);
-    QPushButton* btn = new QPushButton(this);
-    ly->addWidget(btn);
-    connect(btn, &QPushButton::clicked, this, &ReamWidget::slot_btn_clicked);
-
-    m_renderThread = new QThread;
-    m_renderTimer = new QTimer;
-    m_renderTimer->setInterval(1000. / 30);
-    connect(m_renderThread, SIGNAL(started()), m_renderTimer, SLOT(start()));
-    connect(m_renderTimer, SIGNAL(timeout()), this, SLOT(slot_render()), Qt::DirectConnection);
-    connect(m_renderThread, &QThread::finished, m_renderTimer, &QObject::deleteLater);
+    ly->setContentsMargins(0, 0, 0, 0);
 
     m_thread = new QThread;
     m_timer = new QTimer;
@@ -378,6 +369,6 @@ ReamWidget::~ReamWidget()
 {
     m_thread->quit();
     m_thread->wait();
-    m_renderThread->quit();
-    m_renderThread->wait();
 }
+
+

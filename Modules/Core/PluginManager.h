@@ -14,7 +14,7 @@ class CORE_EXPORT PluginManager : public QObject
 
 public:
     static PluginManager* instance();
-
+    QObject* tryConstructObject(QString pageName);
     void loadAllPlugins();
     bool loadPlugin(const QString &filepath);
     bool unloadPlugin(const QString &filepath);

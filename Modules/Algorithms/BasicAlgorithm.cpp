@@ -61,6 +61,23 @@ Eigen::Matrix4d BasicAlgorithm::RotateAroundAxisAtFixedPoint(const Eigen::Vector
     Eigen::Matrix4d mat4 = A.matrix();
 
     return mat4;
+    //第二种写法：旋转中心不变，旋转后用初始位置减去旋转后旋转中心位置
+    /*Eigen::Vector3d x_world;
+    x_world << 1, 0, 0;
+    Eigen::Vector3d x_pelvis;
+    x_pelvis = ASIS_L - ASIS_R;
+    Eigen::Matrix3d rot = Eigen::Quaterniond().FromTwoVectors(x_pelvis, x_world).matrix();
+
+    Eigen::Isometry3d T;
+    T.setIdentity();
+    T.rotate(rot);
+
+    Eigen::Vector3d ASIS_R_roted = T * ASIS_R;
+    Eigen::Vector3d t = ASIS_R - ASIS_R_roted;
+
+    T.pretranslate(t);
+
+    return T.matrix();*/
 }
 
 Eigen::Matrix3d BasicAlgorithm::GenerateRotationMatrix(const Eigen::Vector3d& vectorBefore, const Eigen::Vector3d& vectorAfter)

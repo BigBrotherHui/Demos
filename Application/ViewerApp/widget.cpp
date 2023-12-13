@@ -6,6 +6,9 @@
 #include "PluginInterface.h"
 #include "PluginManager.h"
 #include <QModelIndex>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
@@ -16,7 +19,6 @@ Widget::Widget(QWidget *parent)
     QList<int> sizes;
     sizes << 100 << 1000;
     ui->splitter->setSizes(sizes);
-    connect(ui->pushButton_broadcast, &QPushButton::clicked, this, &Widget::on_pushButton_broadcast_clicked);
     connect(ui->listWidget, &QListWidget::clicked, this, &Widget::slot_listWidget_clicked);
     m_popMenu = new QMenu(this);
     QAction* unloadAction = new QAction(tr("unload"), this);
@@ -66,28 +68,102 @@ void Widget::on_pushButton_3_clicked()
 
 void Widget::on_pushButton_broadcast_clicked()
 {
+    bool usePageConfig{ false };
     for (int i = 0; i < ui->stackedWidget->count(); ++i)
     {
         ui->stackedWidget->removeWidget(ui->stackedWidget->widget(i));
     }
     ui->listWidget->clear();
-    PluginManager* pm = PluginManager::instance();
-    std::vector<QPluginLoader*> plugins;
-    pm->getAllPlugins(plugins);
-    for (int i = 0; i < plugins.size(); ++i)
+    QString pageConfigPath = qApp->applicationDirPath() + "/" + "pageConfig.json";
+    QFile file(pageConfigPath);
+    if(!file.open(QIODevice::ReadWrite))
     {
-        QPluginLoader* loader = plugins.at(i);
-        if (loader)
+        qDebug() << "pageConfig.json open failed";
+        return;
+    }
+    QByteArray allData = file.readAll();
+    QJsonParseError json_error;
+    QJsonDocument jsonDoc(QJsonDocument::fromJson(allData, &json_error));
+    qDebug() << "json error no:" << json_error.error;
+    if (QJsonParseError::IllegalValue == json_error.error)
+    {
+        QJsonObject rootObj = jsonDoc.object();
+        if (!rootObj.contains("PageConfig"))
         {
-            PluginUIInterface* plugin = dynamic_cast<PluginUIInterface*>(loader->instance());
-            if (plugin && plugin->createWidget())
+            QJsonArray jsonArray;
+            QJsonObject page1;
+            page1.insert("PageIndex", 0);
+            page1.insert("PluginClassName", "PluginPolyDataToImage");
+            jsonArray.append(page1);
+            QJsonObject jsonObject;
+            jsonObject.insert("PageConfig", jsonArray);
+            jsonDoc.setObject(jsonObject);
+            file.write(jsonDoc.toJson());
+        }
+    }
+    if (json_error.error == QJsonParseError::NoError || QJsonParseError::IllegalValue == json_error.error)
+    {
+        QJsonObject rootObj = jsonDoc.object();
+        if (rootObj.contains("PageConfig"))
+        {
+            QJsonValue value = rootObj.value("PageConfig");
+            if (value.isArray())
             {
-                ui->listWidget->addItem(plugin->get_name());
-                ui->stackedWidget->insertWidget(0, plugin->createWidget());
+                QJsonArray array = value.toArray();
+                size_t size = array.size();
+                for (int i = 0; i < size; ++i)
+                {
+                    int pageIndex = array.at(i).toObject().value("PageIndex").toInt();
+                    QString pluginClassName= array.at(i).toObject().value("PluginClassName").toString();
+                    QObject *obj=PluginManager::instance()->tryConstructObject(pluginClassName);
+                    if (!obj)
+                    {
+                        qDebug() << "page config error";
+                        return;
+                    }
+                    usePageConfig = 1;
+                    PluginUIInterface *interface=dynamic_cast<PluginUIInterface*>(obj);
+                    if(interface)
+                    {
+                        ui->listWidget->addItem(interface->get_name());
+                        ui->stackedWidget->insertWidget(pageIndex, interface->createWidget());
+                    }
+                }
             }
         }
         else
-            qDebug() << "插件不存在";
+        {
+            QJsonArray jsonArray;
+            QJsonObject page1;
+            page1.insert("page0", "PluginPolyDataToImage");
+            jsonArray.append(page1);
+            QJsonObject jsonObject;
+            jsonObject.insert("PageConfig", jsonArray);
+            jsonDoc.setObject(jsonObject);
+            file.write(jsonDoc.toJson());
+        }
+    }
+    file.close();
+    if(!usePageConfig)
+    {
+        PluginManager* pm = PluginManager::instance();
+        std::vector<QPluginLoader*> plugins;
+        pm->getAllPlugins(plugins);
+        for (int i = 0; i < plugins.size(); ++i)
+        {
+            QPluginLoader* loader = plugins.at(i);
+            if (loader)
+            {
+                PluginUIInterface* plugin = dynamic_cast<PluginUIInterface*>(loader->instance());
+                if (plugin && plugin->createWidget())
+                {
+                    ui->listWidget->addItem(plugin->get_name());
+                    ui->stackedWidget->insertWidget(0, plugin->createWidget());
+                }
+            }
+            else
+                qDebug() << "插件不存在";
+        }
     }
 }
 
@@ -95,8 +171,9 @@ void Widget::slot_listWidget_clicked(const QModelIndex& index)
 {
     if (!index.isValid())
         return;
-    QString item = ui->listWidget->item(index.row())->text();
-    switchWidget(item);
+    //QString item = ui->listWidget->item(index.row())->text();
+    //switchWidget(item);
+    ui->stackedWidget->setCurrentIndex(index.row());
 }
 
 void Widget::slot_unloadAction_triggered()

@@ -26,6 +26,17 @@ PluginManager* PluginManager::instance()
 	return m_instance;
 }
 
+QObject* PluginManager::tryConstructObject(QString pageName)
+{
+    qDebug() << "tryConstructObject" << pageName;
+    int type = QMetaType::type((pageName).toStdString().c_str());
+    const QMetaObject* metaObj = QMetaType::metaObjectForType(type);
+    if (metaObj)
+        return metaObj->newInstance();
+    else
+        return nullptr;
+}
+
 //加载所有插件
 void PluginManager::loadAllPlugins()
 {

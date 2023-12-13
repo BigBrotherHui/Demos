@@ -14,11 +14,11 @@ class THAAlgorithm
 	 * @param ResultInclination [Output] The compute result of Inclination.
 	 * @param type [Input] different type of Anteversion/Inclination angle, default:Radiographic
 	 */
-	void CupAngle(double* direction, double& ResultAnteversion, double& ResultInclination,
+	static void CupAngle(double* direction, double& ResultAnteversion, double& ResultInclination,
 		Defintion::ECupAngleType type = Defintion::ECupAngleType::RADIO_GRAPHIC);
-	void cupAngleRadiographic(double* direction, double& ResultAnteversion, double& ResultInclination);//影像学
-	void cupAngleOperative(double* direction, double& ResultAnteversion, double& ResultInclination);//手术学
-	void cupAngleAnatomical(double* direction, double& ResultAnteversion, double& ResultInclination);//解剖学
+	static void cupAngleRadiographic(double* direction, double& ResultAnteversion, double& ResultInclination);//影像学
+	static void cupAngleOperative(double* direction, double& ResultAnteversion, double& ResultInclination);//手术学
+	static void cupAngleAnatomical(double* direction, double& ResultAnteversion, double& ResultInclination);//解剖学
 	/**
 	* \brief Compute the Femoral Version Angle.
 	*
@@ -37,7 +37,7 @@ class THAAlgorithm
 	* @param PFCA [Input] Proximal point of Femoral canal axis.
 	* @return  Femoral Version Angle
 	*/
-	double FemoralVersionAngle(Defintion::ESide side, double* FHC, double* FNC, double* ME, double* LE, double* DFCA, double* PFCA);
+	static double FemoralVersionAngle(Defintion::ESide side, double* FHC, double* FNC, double* ME, double* LE, double* DFCA, double* PFCA);
 	/**
 	 * \brief Pelvic Tilt is the angle between APP and coronal plane. 
 	 * when the line of the anterior superior iliac spine (X-axis) is virtually corrected
@@ -50,7 +50,7 @@ class THAAlgorithm
 	 * \param pelvicYAxis Perpendicular to the plane defined by the ASIS and midLine point and pointing backward.
 	 * \return Pelvic Tilt angle
 	 */
-	double PelvicTilt(double* pelvicYAxis);
+	static double PelvicTilt(double* pelvicYAxis);
 	/**
 	 * \brief hip length is the distance from the lesser trochanter to the ASIS line.
 	 * when the femur is mechanically aligned and the maximum femural offset is parallel to the coronal plane.
@@ -61,5 +61,34 @@ class THAAlgorithm
 	 * \param ASIS_R Anterior Superior lliac Spine��Right��
 	 * \return hip length(mm)
 	 */
-	double HipLength(double* LT, double* ASIS_L, double* ASIS_R);
+	static double HipLength(double* LT, double* ASIS_L, double* ASIS_R);
+	//
+	/**
+	 * \brief CombinedOffset is the distance from the canal axis to the sagittal plane passing through the midline point.
+	 * When the femoral canal is perpendicular and the femoral offset is at its maximum parallel to the coronal plane.
+	 *
+	 * \param PFCA Proximal point of Femoral canal axis.
+	 * \param DFCA Distal point of Femoral canal axis
+	 * \param MidLine Pelvic Middle Point.
+	 * \return CombinedOffset(mm)
+	 */
+	static double CombinedOffset(double* PFCA, double* DFCA, double* MidLine);
+
+	//Cal local Frame
+	static Eigen::Matrix4d CalPelvisLocalFrame(Eigen::Vector3d& ASIS_L, Eigen::Vector3d& ASIS_R, Eigen::Vector3d& MidLine);
+
+	static Eigen::Matrix4d CalFemurLocalFrame_canal(Eigen::Vector3d& FHC, Eigen::Vector3d& FNC, Eigen::Vector3d& DFCA, Eigen::Vector3d& PFCA, Defintion::ESide side);
+
+	static Eigen::Matrix4d CalFemurLocalFrame_mechanical(Eigen::Vector3d& FHC, Eigen::Vector3d& FNC, Eigen::Vector3d& ME,
+		Eigen::Vector3d& LE, Defintion::ESide side);
+
+	//Virtual Correction
+	static Eigen::Matrix4d CalPelvisCorrectionMatrix(Eigen::Vector3d ASIS_R, Eigen::Vector3d ASIS_L);
+
+	static Eigen::Matrix4d CalFemurCanalCorrectionMatrix(Eigen::Vector3d FHC, Eigen::Vector3d FNC, Eigen::Vector3d DFCA, Eigen::Vector3d PFCA, Defintion::ESide side);
+
+	static Eigen::Matrix4d CalFemurMechanicalCorrectionMatrix(Eigen::Vector3d FHC, Eigen::Vector3d FNC, Eigen::Vector3d ME, Eigen::Vector3d LE, Defintion::ESide side);
+
+	//cup placement
+	static Eigen::Matrix4d CalApplyAIAngleMatrix(Eigen::Vector3d center, double Anteversion, double Inclination, Defintion::ESide side);
 };

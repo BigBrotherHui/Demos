@@ -1,19 +1,17 @@
-#ifndef PLUGIN_H
-#define PLUGIN_H
-
+#pragma once
 #include "Plugins_global.h"
 #include <QObject>
 #include "PluginInterface.h"
 #include <QDebug>
-class PLUGINEXAMPLE_EXPORT Plugin : public QObject,public PluginUIInterface
+class PLUGINEXAMPLE_EXPORT PluginExample : public QObject,public PluginUIInterface
 {
     Q_OBJECT
     Q_INTERFACES(PluginUIInterface)
     Q_PLUGIN_METADATA(IID "example")
-
+    static int typeId;
 public:
-    Plugin();
-    ~Plugin();
+    Q_INVOKABLE PluginExample();
+    ~PluginExample();
     QString get_name() const 
     {
         return "PluginExample";
@@ -32,5 +30,3 @@ signals:
     void sendMsg2Manager(PluginMetaData) Q_DECL_OVERRIDE;
 private:
 };
-
-#endif // PLUGIN_H

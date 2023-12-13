@@ -12,9 +12,9 @@ class PluginPolyDataToImage : public QObject, public PluginUIInterface
     Q_OBJECT
     Q_INTERFACES(PluginUIInterface)
     Q_PLUGIN_METADATA(IID "pti")
-
+    static int typeId;
 public:
-    PluginPolyDataToImage();
+    Q_INVOKABLE PluginPolyDataToImage();
     ~PluginPolyDataToImage();
     QString get_name() const
     {

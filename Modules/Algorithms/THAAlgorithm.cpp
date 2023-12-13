@@ -181,3 +181,152 @@ double THAAlgorithm::HipLength(double* LT, double* ASIS_L, double* ASIS_R)
 {
 	return ASIS_L[2] - LT[2];
 }
+
+double THAAlgorithm::CombinedOffset(double* PFCA, double* DFCA, double* MidLine)
+{
+	return std::abs(PFCA[0]-MidLine[0]);
+}
+
+Eigen::Matrix4d THAAlgorithm::CalPelvisCorrectionMatrix(Eigen::Vector3d ASIS_R, Eigen::Vector3d ASIS_L)
+{
+	Eigen::Vector3d x_world;
+	x_world << 1, 0, 0;
+	Eigen::Vector3d x_pelvis;
+	x_pelvis = ASIS_L - ASIS_R;
+	Eigen::Matrix3d rot = Eigen::Quaterniond().FromTwoVectors(x_pelvis, x_world).matrix();
+
+	Eigen::Isometry3d T;
+	T.setIdentity();
+	T.rotate(rot);
+
+	Eigen::Vector3d ASIS_R_roted = T * ASIS_R;
+	Eigen::Vector3d t = ASIS_R - ASIS_R_roted;
+
+	T.pretranslate(t);
+
+	return T.matrix();
+}
+
+Eigen::Matrix4d THAAlgorithm::CalFemurCanalCorrectionMatrix(Eigen::Vector3d FHC, Eigen::Vector3d FNC, Eigen::Vector3d DFCA,
+	Eigen::Vector3d PFCA, ESide side)
+{
+	//cal axes
+	Eigen::Matrix4d localFrame = CalFemurLocalFrame_canal(FHC, FNC, DFCA, PFCA, side);
+	//rotate to align axes
+	Eigen::Matrix3d rot;
+	rot.setIdentity();
+	rot = localFrame.block<3, 3>(0, 0);
+
+	Eigen::Isometry3d T;
+	T.setIdentity();
+	T.rotate(rot.inverse());
+
+	//translate back to fhc
+	Eigen::Vector3d fhc_rot = T * FHC;
+	Eigen::Vector3d t = FHC - fhc_rot;
+	T.pretranslate(t);
+
+	return T.matrix();
+}
+
+Eigen::Matrix4d THAAlgorithm::CalFemurMechanicalCorrectionMatrix(Eigen::Vector3d FHC, Eigen::Vector3d FNC, Eigen::Vector3d ME,
+	Eigen::Vector3d LE, ESide side)
+{
+	//cal axes
+	Eigen::Matrix4d localFrame = CalFemurLocalFrame_mechanical(FHC, FNC, ME, LE, side);
+	//rotate to align axes
+	Eigen::Matrix3d rot;
+	rot.setIdentity();
+	rot = localFrame.block<3, 3>(0, 0);
+
+	Eigen::Isometry3d T;
+	T.setIdentity();
+	T.rotate(rot.inverse());
+
+	//translate back to fhc
+	Eigen::Vector3d fhc_rot = T * FHC;
+	Eigen::Vector3d t = FHC - fhc_rot;
+	T.pretranslate(t);
+
+	return T.matrix();
+}
+
+Eigen::Matrix4d THAAlgorithm::CalApplyAIAngleMatrix(Eigen::Vector3d center, double Anteversion, double Inclination, ESide side)
+{
+	Anteversion = Anteversion / 180.0 * EIGEN_PI;
+	Inclination = Inclination / 180.0 * EIGEN_PI;
+	Eigen::Vector3d x, y, z;
+	x << 1, 0, 0;
+	y << 0, 1, 0;
+	z << 0, 0, 1;
+
+	Eigen::Isometry3d T;
+	T.setIdentity();
+
+	if (side == ESide::right)
+	{
+		const Eigen::AngleAxis rot(Inclination, y);
+		T.rotate(rot);
+	}
+	else
+	{
+		const Eigen::AngleAxis rot(Inclination, -y);
+		T.rotate(rot);
+	}
+
+	Eigen::Vector3d x_rot = T * x;
+	Eigen::AngleAxis rot2(Anteversion, -x_rot);
+	T.prerotate(rot2);
+
+	Eigen::Vector3d center_rot = T * center;
+	T.pretranslate(center - center_rot);
+
+	return T.matrix();
+}
+
+Eigen::Matrix4d THAAlgorithm::CalPelvisLocalFrame(Eigen::Vector3d& ASIS_L, Eigen::Vector3d& ASIS_R, Eigen::Vector3d& MidLine)
+{
+	Eigen::Vector3d x = (ASIS_L - ASIS_R).normalized();
+	Eigen::Vector3d y = (ASIS_R - MidLine).cross(ASIS_L - MidLine).normalized();
+	Eigen::Vector3d z = x.cross(y).normalized();
+
+	return BasicAlgorithm::ConvertCoordstoTransform(MidLine, x, y, z);
+}
+
+Eigen::Matrix4d THAAlgorithm::CalFemurLocalFrame_canal(Eigen::Vector3d& FHC, Eigen::Vector3d& FNC, Eigen::Vector3d& DFCA, Eigen::Vector3d& PFCA, ESide side)
+{
+	Eigen::Vector3d x, y, z;
+	if (side == ESide::right)
+	{
+		z = (PFCA - DFCA).normalized();
+		y = z.cross(FHC - FNC).normalized();
+		x = y.cross(z).normalized();
+	}
+	else
+	{
+		z = (PFCA - DFCA).normalized();
+		y = (FHC - FNC).cross(z).normalized();
+		x = y.cross(z).normalized();
+	}
+	return BasicAlgorithm::ConvertCoordstoTransform(FHC, x, y, z);
+}
+
+Eigen::Matrix4d THAAlgorithm::CalFemurLocalFrame_mechanical(Eigen::Vector3d& FHC, Eigen::Vector3d& FNC, Eigen::Vector3d& ME,
+	Eigen::Vector3d& LE, ESide side)
+{
+	auto midEEs = (ME + LE) / 2.0;
+	Eigen::Vector3d x, y, z;
+	if (side == ESide::right)
+	{
+		z = (FHC - midEEs).normalized();
+		y = z.cross(FHC - FNC).normalized();
+		x = y.cross(z).normalized();
+	}
+	else
+	{
+		z = (FHC - midEEs).normalized();
+		y = (FHC - FNC).cross(z).normalized();
+		x = y.cross(z).normalized();
+	}
+	return BasicAlgorithm::ConvertCoordstoTransform(FHC, x, y, z);
+}

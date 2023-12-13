@@ -1,15 +1,16 @@
 #include "PluginExample.h"
 #include "widget.h"
 #include <iostream>
-Plugin::Plugin()
+int PluginExample::typeId = qRegisterMetaType<PluginExample*>("PluginExample");
+PluginExample::PluginExample()
 {
 }
 
-Plugin::~Plugin()
+PluginExample::~PluginExample()
 {
 }
 
-QWidget* Plugin::createWidget()
+QWidget* PluginExample::createWidget()
 {
 	if(!m_widget)
 		m_widget = new Widget;
