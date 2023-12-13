@@ -3,7 +3,6 @@
 #include <QDir>
 #include <QDebug>
 #include <QPluginLoader>
-#include "PluginInterface.h"
 #include "PluginManager.h"
 #include <QModelIndex>
 #include <QJsonObject>
@@ -61,6 +60,11 @@ void Widget::on_listWidget_customContextMenuRequested(const QPoint& pos)
 //卸载所有插件
 void Widget::on_pushButton_3_clicked()
 {
+    //先清除所有stackWidget关联的插件对象，因为有的插件通过反射生成的
+    for(auto p : m_configedPlugins)
+    {
+        delete p;
+    }
     PluginManager * pm = PluginManager::instance();
     pm->unloadAllPlugins();
     ui->listWidget->clear();
@@ -123,6 +127,7 @@ void Widget::on_pushButton_broadcast_clicked()
                     }
                     usePageConfig = 1;
                     PluginUIInterface *interface=dynamic_cast<PluginUIInterface*>(obj);
+                    m_configedPlugins.emplace(interface);
                     if(interface)
                     {
                         ui->listWidget->addItem(interface->get_name());

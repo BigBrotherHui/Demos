@@ -3,7 +3,8 @@
 
 #include <QWidget>
 #include <QMenu>
-
+#include "PluginInterface.h"
+#include <set>
 class PluginManager;
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -28,5 +29,6 @@ protected slots:
 private:
     Ui::Widget *ui;
     QMenu* m_popMenu;
+    std::set<PluginInterface*> m_configedPlugins;
 };
 #endif // WIDGET_H
