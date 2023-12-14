@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "PluginSharedDataStorage.h"
 
+int PluginSharedDataStorage::typeId = qRegisterMetaType<PluginSharedDataStorage*>("PluginSharedDataStorage");
 PluginSharedDataStorage::PluginSharedDataStorage()
 {
 }

@@ -1,0 +1,12 @@
+{
+    "PageConfig": [
+        {
+            "PageIndex": 0,
+            "PluginClassName": "PluginPolyDataToImage"
+        },
+		{
+            "PageIndex": 1,
+            "PluginClassName": "PluginSharedDataStorage"
+        }
+    ]
+}

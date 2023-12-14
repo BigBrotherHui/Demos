@@ -16,7 +16,7 @@ Widget::Widget(QWidget *parent)
     ui->listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->listWidget, &QListWidget::customContextMenuRequested, this, &Widget::on_listWidget_customContextMenuRequested);
     QList<int> sizes;
-    sizes << 100 << 1000;
+    sizes << 300 <<150<< 1000;
     ui->splitter->setSizes(sizes);
     connect(ui->listWidget, &QListWidget::clicked, this, &Widget::slot_listWidget_clicked);
     m_popMenu = new QMenu(this);
@@ -86,6 +86,7 @@ void Widget::on_pushButton_broadcast_clicked()
         return;
     }
     QByteArray allData = file.readAll();
+    ui->plainTextEdit->setPlainText(allData);
     QJsonParseError json_error;
     QJsonDocument jsonDoc(QJsonDocument::fromJson(allData, &json_error));
     qDebug() << "json error no:" << json_error.error;
@@ -170,6 +171,20 @@ void Widget::on_pushButton_broadcast_clicked()
                 qDebug() << "插件不存在";
         }
     }
+}
+
+void Widget::on_pushButton_write_clicked()
+{
+    QString text = ui->plainTextEdit->toPlainText();
+    QString pageConfigPath = qApp->applicationDirPath() + "/" + "pageConfig.json";
+    QFile file(pageConfigPath);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        qDebug() << "pageConfig.json open failed";
+        return;
+    }
+    file.write(text.toUtf8());
+    file.close();
 }
 
 void Widget::slot_listWidget_clicked(const QModelIndex& index)

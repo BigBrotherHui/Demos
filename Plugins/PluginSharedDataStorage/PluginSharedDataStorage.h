@@ -10,9 +10,9 @@ class PlUGINSHAREDDAtASTORAGE_EXPORT PluginSharedDataStorage : public QObject,pu
     Q_OBJECT
     Q_INTERFACES(PluginUIInterface)
     Q_PLUGIN_METADATA(IID "shareddatastorage")
-
+    static int typeId;
 public:
-    PluginSharedDataStorage();
+    Q_INVOKABLE PluginSharedDataStorage();
     ~PluginSharedDataStorage();
     QString get_name() const
     {

@@ -23,6 +23,7 @@ private slots:
     void on_listWidget_customContextMenuRequested(const QPoint& pos);
     void on_pushButton_3_clicked();
     void on_pushButton_broadcast_clicked();
+    void on_pushButton_write_clicked();
 protected slots:
     void slot_unloadAction_triggered();
     void slot_listWidget_clicked(const QModelIndex& index);
