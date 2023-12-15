@@ -43,9 +43,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_sharedTo2">
+         <widget class="QPushButton" name="pushButton_cpr">
           <property name="text">
-           <string>sharedTo2</string>
+           <string>cpr</string>
           </property>
          </widget>
         </item>

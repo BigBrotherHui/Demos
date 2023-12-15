@@ -11,6 +11,7 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(MITK 2023.04 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(ITK REQUIRED)
+find_package(VTK REQUIRED)
 file(GLOB_RECURSE SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE HEADER_FILES "*.h")
 file(GLOB_RECURSE UI_FILES "*.ui")
@@ -45,6 +46,6 @@ endif()
 # 设置筛选器
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Plugins")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core ${ITK_LIBRARIES}
-MitkCore MitkQtWidgets MitkMapperExt MitkDICOM
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core ${ITK_LIBRARIES} ${VTK_LIBRARIES}
+MitkCore MitkQtWidgets MitkMapperExt MitkDICOM MitkAlgorithmsExt
 )

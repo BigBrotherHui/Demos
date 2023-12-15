@@ -7,7 +7,6 @@
 #include <QmitkRenderWindow.h>
 #include <QmitkRenderWindowWidget.h>
 #include <mitkDataNode.h>
-#include <mitkPointSet.h>
 #include <mitkPointSetDataInteractor.h>
 #include <mitkNodePredicateDataType.h>
 #include <mitkImage.h>
@@ -28,6 +27,18 @@
 #include <itkGDCMImageIO.h>
 #include <itkGDCMSeriesFileNames.h>
 #include <mitkITKImageImport.h>
+#include <vtkOrientedGlyphContourRepresentation.h>
+#include <vtkImageAppend.h>
+#include "CBCTSplineDrivenImageSlicer.h"
+#include <vtkSplineFilter.h>
+#include <vtkImagePermute.h>
+#include <vtkImageFlip.h>
+#include <vtkLineSource.h>
+#include <vtkLine.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkMetaImageWriter.h>
+#include <vtkImageWriter.h>
+#include <mitkLine.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : WidgetBase(parent)
@@ -69,6 +80,91 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long, void*, void*)
+{
+    auto widget = dynamic_cast<vtkContourWidget*>(t_obj);
+    auto rep = dynamic_cast<vtkOrientedGlyphContourRepresentation*>(widget->GetContourRepresentation());
+    if (rep) {
+        vtkSmartPointer<vtkMatrix4x4> sourceMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
+        //vtkMatrix4x4* curPlaneGeo = ;
+        /*double pt[3]{ 100, 200, 200 };
+        mitk::Point3D mpt(pt);*/
+    	//w1->GetRenderWindow1()->GetSliceNavigationController()->SelectSliceByPoint(mpt);
+        const mitk::PlaneGeometry* plane1 = w1->GetRenderWindow1()->GetSliceNavigationController()->GetCurrentPlaneGeometry();
+        const mitk::PlaneGeometry* plane2 = w1->GetRenderWindow2()->GetSliceNavigationController()->GetCurrentPlaneGeometry();
+        const mitk::PlaneGeometry* plane3 = w1->GetRenderWindow3()->GetSliceNavigationController()->GetCurrentPlaneGeometry();
+        mitk::Line3D line;
+        if ((plane1 != nullptr) && (plane2 != nullptr)
+            && (plane1->IntersectionLine(plane2, line)))
+        {
+            mitk::Point3D point;
+            if ((plane3 != nullptr) && (plane3->IntersectionPoint(line, point)))
+            {
+                sourceMatrix->SetElement(0, 3, point[0]);
+                sourceMatrix->SetElement(1, 3, point[1]);
+                sourceMatrix->SetElement(2, 3, point[2]);
+            }
+        }
+        qint32 n = rep->GetNumberOfNodes();
+        vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+        vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
+        lines->InsertCellPoint(n);
+        for (qint32 i = 0; i < n; ++i) {
+            double p[3];
+            rep->GetNthNodeWorldPosition(i, p);
+            vtkNew<vtkTransform> transform1;
+            transform1->SetMatrix(sourceMatrix);
+            transform1->Translate(p[0], p[1], 0);
+            points->InsertNextPoint(transform1->GetMatrix()->GetElement(0, 3), transform1->GetMatrix()->GetElement(1, 3),
+                transform1->GetMatrix()->GetElement(2, 3));
+            lines->InsertCellPoint(i);
+        }
+        vtkSmartPointer<vtkPolyData> p = vtkSmartPointer<vtkPolyData>::New();
+        p->SetPoints(points);
+        p->SetLines(lines);
+        
+        vtkNew<vtkSplineFilter> spline_filter;
+        spline_filter->SetSubdivideToLength();
+        spline_filter->SetLength(0.2);
+        spline_filter->SetInputData(p);
+        spline_filter->Update();
+        vtkNew<vtkImageAppend> append;
+        append->SetAppendAxis(2);
+        vtkNew<CBCTSplineDrivenImageSlicer> reslicer;
+        vtkImageData* imgData = static_cast<mitk::Image*>(ds1->GetNamedNode("imageNode")->GetData())->GetVtkImageData();
+        reslicer->SetInputData(imgData);
+        reslicer->SetPathConnection(spline_filter->GetOutputPort());
+        long long nb_points = spline_filter->GetOutput()->GetNumberOfPoints();
+        qDebug() << "nb_points:" << nb_points;
+        for (int pt_id = 0; pt_id < nb_points; pt_id++) {
+            reslicer->Setoffset_point_(pt_id);
+            reslicer->Update();
+            vtkNew<vtkImageData> tempSlice;
+            tempSlice->DeepCopy(reslicer->GetOutput());
+            append->AddInputData(tempSlice);
+        }
+        append->Update();
+        vtkNew<vtkImagePermute> permute_filter;
+        permute_filter->SetInputData(append->GetOutput());
+        permute_filter->SetFilteredAxes(2, 0, 1);
+        permute_filter->Update();
+        vtkNew<vtkImageFlip> flip_filter;
+        flip_filter->SetInputData(permute_filter->GetOutput());
+        flip_filter->SetFilteredAxes(1);
+        flip_filter->Update();
+        qDebug()<<"range1:"<<flip_filter->GetOutput()->GetScalarRange()[1];
+    	mitk::DataNode::Pointer imgNode = mitk::DataNode::New();
+        mitk::Image::Pointer img = mitk::Image::New();
+        img->Initialize(flip_filter->GetOutput());
+        img->SetImportVolume(flip_filter->GetOutput()->GetScalarPointer());
+        imgNode->SetData(img);
+        ds1->Add(imgNode);
+        imgNode->SetProperty("volumerendering", mitk::BoolProperty::New(1));
+        w1->ResetView();
+        w1->RequestUpdateAll();
+    }
+}
+
 //std::string GenerateNameFromDICOMProperties(const mitk::IPropertyProvider* provider)
 //{
 //    std::string nodeName = mitk::DataNode::NO_NAME_VALUE();
@@ -100,7 +196,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_loaddata_clicked()
 {
-    std::string dicomSeriesPath="D:/Images/THA Datas/HIP_MODEL/ct/raw data";
+    std::string dicomSeriesPath="D:/Images/knee-small";
     using TPixel = signed short;
     const unsigned int DIM3 = 3;
     using TImage = itk::Image<TPixel, DIM3>;
@@ -135,6 +231,9 @@ void MainWindow::on_pushButton_loaddata_clicked()
         mitk::GrabItkImageMemory(m_gdcmReader->GetOutput(), mitkImage);
         mitk::DataNode::Pointer imgNode = mitk::DataNode::New();
         imgNode->SetData(mitkImage);
+        imgNode->SetName("imageNode");
+        imgNode->SetVisibility(0, w1->GetRenderWindow4()->GetRenderer());
+        //imgNode->SetProperty("volumerendering", mitk::BoolProperty::New(1));
         ds1->Add(imgNode);
     }
     catch (const std::exception& e) {
@@ -199,31 +298,170 @@ void MainWindow::on_pushButton_loaddata_clicked()
 
 void MainWindow::on_pushButton_addpoint_clicked()
 {
-    //mitk::DataNode::Pointer dt=mitk::DataNode::New();
-    //mitk::PointSet::Pointer ps=mitk::PointSet::New();
-    //dt->SetData(ps);
-    ////mitk::SplineVtkMapper3D::Pointer mapper = mitk::SplineVtkMapper3D::New();
-    ////dt->SetMapper(mitk::BaseRenderer::Standard3D, mapper);
-    //dt->SetProperty("pointsize",mitk::FloatProperty::New(10.));
-    //mitk::PointSetDataInteractor::Pointer inter=mitk::PointSetDataInteractor::New();
-    //inter->SetMaxPoints(10);
-    //inter->LoadStateMachine("PointSet.xml");
-    //inter->SetEventConfig("PointSetConfig.xml");
-    //inter->SetDataNode(dt);
-    //ds1->Add(dt);
-    //ds2->Add(dt);
+    if(!m_ps)
+    {
+        mitk::DataNode::Pointer dt = mitk::DataNode::New();
+        m_ps = mitk::PointSet::New();
+        dt->SetData(m_ps);
+        //mitk::SplineVtkMapper3D::Pointer mapper = mitk::SplineVtkMapper3D::New();
+        //dt->SetMapper(mitk::BaseRenderer::Standard3D, mapper);
+        dt->SetProperty("pointsize", mitk::FloatProperty::New(10.));
+        dt->SetName("pointNode");
+        mitk::PointSetDataInteractor::Pointer inter = mitk::PointSetDataInteractor::New();
+        inter->SetMaxPoints(10);
+        inter->LoadStateMachine("PointSet.xml");
+        inter->SetEventConfig("PointSetConfig.xml");
+        inter->SetDataNode(dt);
+        dt->SetVisibility(0, w1->GetRenderWindow4()->GetRenderer());
+
+        ds1->Add(dt);
+    }
+    static bool f{ false };
+    f = !f;
+    if(!f)
+    {
+        m_ps->Clear();
+    }
 }
 
-void MainWindow::on_pushButton_sharedTo2_clicked()
+void MainWindow::on_pushButton_cpr_clicked()
 {
-    //w2->SetDataStorage(ds2);
-    //w2->ResetCrosshair();
+    if(!m_contour_widget_)
+    {
+        m_contour_widget_ = vtkContourWidget::New();
+        m_contour_widget_->SetInteractor(w1->GetRenderWindow1()->GetInteractor());
+        m_contour_widget_->CreateDefaultRepresentation();
+        m_contour_widget_->On();
+    }
+    if (!m_scrollConnection)
+    {
+        m_scrollConnection = vtkSmartPointer<vtkEventQtSlotConnect>::New();
+        m_scrollConnection->Connect(
+            m_contour_widget_, vtkCommand::EndInteractionEvent, this, SLOT(
+                SlotContourEndInteractionEvent(
+                    vtkObject*, unsigned long, void*, void*))
+            , nullptr, 0.0, Qt::UniqueConnection);
+    }
+    
 }
 
 void MainWindow::on_pushButton_sharedTo3_clicked()
 {
-    //w2->SetDataStorage(ds1);
-    //w2->ResetCrosshair();
-    /*rw->GetRenderer()->SetDataStorage(ds1);
-    mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(rw->GetVtkRenderWindow(), ds1);*/
+    auto ps=static_cast<mitk::PointSet*>(ds1->GetNamedNode("pointNode")->GetData());
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    for(int i=0;i<ps->GetSize();++i)
+    {
+        points->InsertNextPoint(ps->GetPoint(i).data());
+    }
+    auto actor=doCurvePlanReformation(points);
+    w1->GetRenderWindow4()->GetRenderer()->GetVtkRenderer()->AddActor(actor);
+    w1->GetRenderWindow4()->GetVtkRenderWindow()->Render();
+}
+#include <vtkSCurveSpline.h>
+#include <vtkParametricSpline.h>
+#include <vtkParametricFunctionSource.h>
+#include <vtkSplineDrivenImageSlicer.h>
+#include <vtkPlane.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkCutter.h>
+#include <vtkImageShiftScale.h>
+#include <vtkFixedPointVolumeRayCastMapper.h>
+#include <vtkVolumeProperty.h>
+#include <vtkPiecewiseFunction.h>
+vtkActor* MainWindow::doCurvePlanReformation(vtkPoints* route) {
+
+    vtkSCurveSpline* xSpline = vtkSCurveSpline::New();
+    vtkSCurveSpline* ySpline = vtkSCurveSpline::New();
+    vtkSCurveSpline* zSpline = vtkSCurveSpline::New();
+    vtkParametricSpline* spline = vtkParametricSpline::New();
+    vtkParametricFunctionSource* functionSource = vtkParametricFunctionSource::New();
+
+    vtkSplineDrivenImageSlicer* reslicer = vtkSplineDrivenImageSlicer::New();
+    vtkImageAppend* append = vtkImageAppend::New();
+
+    //! cpr slice
+    vtkPolyDataMapper* cprmapper = vtkPolyDataMapper::New();
+    vtkActor* cpractor = vtkActor::New();
+
+    vtkPlane* pPlane = vtkPlane::New();
+    vtkCutter* pCut = vtkCutter::New();
+    vtkImageShiftScale* m_pShift = vtkImageShiftScale::New();
+
+    //! cpr volume
+    vtkFixedPointVolumeRayCastMapper* cprVolumeMapper = vtkFixedPointVolumeRayCastMapper::New();
+    vtkVolume* cprvolume = vtkVolume::New();
+    vtkColorTransferFunction* cprcolorTranFun = vtkColorTransferFunction::New();
+    vtkVolumeProperty* cprVolumeproperty = vtkVolumeProperty::New();
+    vtkPiecewiseFunction* cprPieceFun = vtkPiecewiseFunction::New();
+
+    spline->SetXSpline(xSpline);
+    spline->SetYSpline(ySpline);
+    spline->SetZSpline(zSpline);
+    spline->SetPoints(route);
+    functionSource->SetParametricFunction(spline);
+    functionSource->SetUResolution(200);
+    functionSource->SetVResolution(200);
+    functionSource->SetWResolution(200);
+    functionSource->Update();
+    vtkImageData* imgData = static_cast<mitk::Image*>(ds1->GetNamedNode("imageNode")->GetData())->GetVtkImageData();
+    reslicer->SetInputData(imgData);
+    reslicer->SetPathConnection(functionSource->GetOutputPort());
+    reslicer->SetSliceSpacing(0.2, 0.1);
+    reslicer->SetSliceThickness(0.8);
+    reslicer->SetSliceExtent(200, 200);
+    reslicer->SetOffsetPoint(30);
+
+    long long nbPoints = functionSource->GetOutput()->GetNumberOfPoints();
+    for (int ptId = 0; ptId < nbPoints; ptId++) {
+        reslicer->SetOffsetPoint(ptId);
+        reslicer->Update();
+        vtkImageData* tempSlice = vtkImageData::New();
+        tempSlice->DeepCopy(reslicer->GetOutput(0));
+        append->AddInputData(tempSlice);
+    }
+    append->SetAppendAxis(2);
+    append->Update();
+
+    //    vtkSmartPointer<vtkMetaImageWriter> writer =
+    //         vtkSmartPointer<vtkMetaImageWriter>::New();
+    //      writer->SetInputConnection(append->GetOutputPort());
+    //      writer->SetFileName("C:\\Users\\cheng\\Desktop\\hehe\\hehe.mhd");
+    //      writer->SetRAWFileName("C:\\Users\\cheng\\Desktop\\hehe\\hehe.raw");
+    //      writer->Write();
+
+        //! TODO append->GetOutput()
+    cprVolumeMapper->SetInputConnection(append->GetOutputPort());
+    cprcolorTranFun->AddRGBSegment(0, 1, 1, 1, 255, 1, 1, 1);
+    cprPieceFun->AddSegment(0, 0, 3000, 1);
+    cprPieceFun->AddPoint(20, 0.2);
+    cprPieceFun->AddPoint(80, 0.5);
+    cprPieceFun->AddPoint(120, 0.7);
+    cprPieceFun->AddPoint(200, 0.9);
+    cprPieceFun->ClampingOff();
+    cprVolumeMapper->SetBlendModeToMaximumIntensity();
+    cprVolumeproperty->SetColor(cprcolorTranFun);
+    cprVolumeproperty->SetScalarOpacity(cprPieceFun);
+    cprVolumeproperty->SetInterpolationTypeToLinear();
+    cprVolumeproperty->ShadeOff();
+    cprvolume->SetProperty(cprVolumeproperty);
+    cprvolume->SetMapper(cprVolumeMapper);
+
+    double range[2];
+    imgData->GetScalarRange(range);
+    m_pShift->SetShift(-1.0 * range[0]);
+    m_pShift->SetScale(255.0 / (range[1] - range[0]));
+    m_pShift->SetOutputScalarTypeToUnsignedChar();
+    m_pShift->SetInputConnection(append->GetOutputPort());
+    m_pShift->ReleaseDataFlagOff();
+    m_pShift->Update();
+
+    pPlane->SetOrigin(cprvolume->GetCenter());
+    pPlane->SetNormal(1, 1, 0);
+    pCut->SetCutFunction(pPlane);
+    pCut->SetInputConnection(m_pShift->GetOutputPort());
+    pCut->Update();
+
+    cprmapper->SetInputData(pCut->GetOutput());
+    cpractor->SetMapper(cprmapper);
+    return cpractor;
 }
