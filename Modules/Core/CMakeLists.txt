@@ -8,12 +8,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
-
+find_package(VTK REQUIRED)
+find_package(Eigen3 REQUIRED)
 file(GLOB_RECURSE SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE HEADER_FILES "*.h")
 file(GLOB_RECURSE UI_FILES "*.ui")
 file(GLOB_RECURSE QRC_FILES "*.qrc")
-
+include_directories(${EIGEN3_INCLUDE_DIR})
 set(PROJECT_SOURCES
         ${SOURCE_FILES} ${HEADER_FILES} ${UI_FILES} ${QRC_FILES}
 )
@@ -44,4 +45,4 @@ endif()
 # 设置筛选器
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Modules")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core ${VTK_LIBRARIES})

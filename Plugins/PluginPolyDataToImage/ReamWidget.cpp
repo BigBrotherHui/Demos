@@ -17,7 +17,6 @@
 #include <QBoxLayout>
 #include <QPushButton>
 #include <QThread>
-#include "TimerThread.h"
 #include <vtkCamera.h>
 #include <QDateTime>
 #include <QtConcurrent/QtConcurrent>

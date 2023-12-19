@@ -27,18 +27,18 @@
 void ReamWidgetTest::slot_btn_clicked()
 {
     vtkSmartPointer<vtkSTLReader> reader_femur = vtkSmartPointer<vtkSTLReader>::New();
-    reader_femur->SetFileName(QString(qApp->applicationDirPath() + "/stl/TibiaLeft_Cutted.stl").toStdString().c_str());
+    reader_femur->SetFileName(QString(qApp->applicationDirPath() + "/stl/FemurLeft_Cutted.stl").toStdString().c_str());
     reader_femur->Update();
     vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
-    reader->SetFileName(QString(qApp->applicationDirPath() + "/stl/YS_NA_Tibia_PS_5_NA.STL").toStdString().c_str());
+    reader->SetFileName(QString(qApp->applicationDirPath() + "/stl/YS_NA_Femoral_PS_5_L.STL").toStdString().c_str());
     reader->Update();
     vtkNew<vtkSTLReader> reader_cutter;
-    reader_cutter->SetFileName(QString(qApp->applicationDirPath() + "/stl/thinCutter.STL").toStdString().c_str());
+    reader_cutter->SetFileName(QString(qApp->applicationDirPath() + "/stl/roughCutter.STL").toStdString().c_str());
     reader_cutter->Update();
     double mt_tibia[16]{
-		1.00,0.02,0.00,-15.74,
-		-0.02,1.00,-0.01,-208.05,
-		-0.00,0.01,1.00,1325.44,
+		1.00,0.02,0.00,-28.036,
+		-0.02,1.00,-0.01,-204.929,
+		-0.00,0.01,1.00,1355.258,
 		0.00,0.00,0.00,1.00
     };
     vtkSmartPointer<vtkMatrix4x4> prosthesis_matrix = vtkSmartPointer<vtkMatrix4x4>::New();

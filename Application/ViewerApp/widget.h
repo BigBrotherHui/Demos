@@ -15,7 +15,7 @@ class Widget : public QWidget
     Q_OBJECT
 
 public:
-    Widget(QWidget *parent = nullptr);
+    Widget(QWidget *parent=nullptr,PluginInterface *interface=nullptr);
     ~Widget();
     void switchWidget(QString pluginName);
 private slots:

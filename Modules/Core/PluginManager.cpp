@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QThread>
 #include <QFileSystemWatcher>
+#include "UsefulFunctions.h"
 PluginManager *PluginManager::m_instance=nullptr;
 
 PluginManager::PluginManager(QObject *parent) : QObject(parent)
@@ -12,18 +13,53 @@ PluginManager::PluginManager(QObject *parent) : QObject(parent)
     m_file_system_watcher = FileSystemWatcher::instance();
     m_file_system_watcher->addWatchPath(qApp->applicationDirPath() + "/plugins");
     connect(m_file_system_watcher, &FileSystemWatcher::signal_directoryUpdated, this, &PluginManager::slot_directoryUpdated);
+    m_sendObject = new SendThreadObject(&m_mutex,&m_condition,&m_waiting_metadatas);
+    m_sendThread = new QThread(this);
+    m_sendObject->moveToThread(m_sendThread);
+    connect(m_sendThread, &QThread::started, m_sendObject, &SendThreadObject::slot_DealMetadata);
+    m_sendThread->start();
 }
 
 PluginManager::~PluginManager()
 {
     unloadAllPlugins();
+    m_sendThread->quit();
+    m_sendThread->wait();
+}
+
+SendThreadObject::SendThreadObject(QMutex* mutex, QWaitCondition* condition, std::priority_queue<PluginMetaData, std::vector<PluginMetaData>, compare>* queue)
+{
+    m_mutex = mutex;
+    m_condition = condition;
+    m_queue = queue;
+}
+
+void SendThreadObject::slot_DealMetadata()
+{
+    while(1)
+    {
+        if (m_queue->size() == 0)
+        {
+            m_mutex->lock();
+            m_condition->wait(m_mutex);   /*生产者消费者模型, 主要是要理解wait的机制, wait时, 会阻塞在这里, 且同时也会把锁打开(让生产者可以向queue中插入数据).
+            生产者向queue中插入数据后, 需要调用condition.wakeall()或wakeone(), 当condition收到wake信号时, 会把锁重新锁上(暂时不让生产者向queue中插数据), 并开始执行此处
+            后面的代码.*/
+            if(m_queue->size() > 0)
+            {
+                PluginMetaData meta=m_queue->top();
+                PluginManager::instance()->sendMsg(meta);
+                m_queue->pop();
+            }
+            m_mutex->unlock();
+        }
+    }
 }
 
 PluginManager* PluginManager::instance()
 {    
 	if (!m_instance)
         m_instance = new PluginManager();
-	return m_instance;
+	return m_instance;  
 }
 
 QObject* PluginManager::tryConstructObject(QString pageName)
@@ -124,11 +160,11 @@ bool PluginManager::unloadPlugin(const QString &filepath)
 
 bool PluginManager::unloadPlugin(QPluginLoader* loader)
 {
-    return unloadPlugin(m_names.key(getPluginName(loader).toString()));
+    return unloadPlugin(m_names.key(getPluginName(loader)));
 }
 
 //获取某个插件名称
-QVariant PluginManager::getPluginName(QPluginLoader *loader)
+QString PluginManager::getPluginName(QPluginLoader *loader)
 {
     if(loader)
         return m_names.value(m_loaders.key(loader));
@@ -151,15 +187,59 @@ QPluginLoader *PluginManager::getPlugin(const QString &name)
     return m_loaders.value(m_names.key(name));
 }
 
+void PluginManager::sendMsg(const PluginMetaData& data)
+{
+    if (data.dest.isEmpty())
+    {
+        qDebug() << "sendMsg error:dest is empty";
+        return;
+    }
+    auto loader = getPlugin(data.dest);
+    if (!loader)
+        return;
+    auto interface = dynamic_cast<PluginInterface*>(loader->instance());;
+    if (!interface)
+        return;
+    interface->recMsgfromManager(data);
+}
+
 void PluginManager::recMsgfromPlugin(PluginMetaData metadata)
 {
-    auto loader = getPlugin(metadata.dest);//目标插件
-    if(loader)
+    if(metadata.blocking)
     {
-        auto interface = dynamic_cast<PluginInterface*>(loader->instance());;
-        if(interface)
+        if (!metadata.dest.isEmpty())
         {
-            interface->recMsgfromManager(metadata);//转发给对应插件
+            sendMsg(metadata);
+        }
+        else
+        {
+            for (auto loader : m_loaders)
+            {
+                QString name = getPluginName(loader);
+                metadata.dest = name;
+                sendMsg(metadata);
+            }
+        }
+    }else
+    {
+        if (!metadata.dest.isEmpty())
+        {
+            m_mutex.lock();
+            m_waiting_metadatas.push(metadata);
+            m_condition.wakeAll();
+            m_mutex.unlock();
+        }
+        else
+        {
+            for (auto loader : m_loaders)
+            {
+                QString name = getPluginName(loader);
+                metadata.dest = name;
+                m_mutex.lock();
+                m_waiting_metadatas.push(metadata);
+                m_condition.wakeAll();
+                m_mutex.unlock();
+            }
         }
     }
 }

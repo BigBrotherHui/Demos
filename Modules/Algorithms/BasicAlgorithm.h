@@ -1,15 +1,18 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <Eigen/Eigen>
+using namespace Eigen;
+using namespace std;
 class BasicAlgorithm
 {
 public:
-	/**
-	 * @brief ¼ÆËã2¸öËÄÔªÊıµÄÇòÃæÏßĞÔ²åÖµSpherical linear interpolation
-	 * @param start_qÆğÊ¼Î»ÖÃ
-	 * @param end_qÖÕÖ¹Î»ÖÃ
-	 * @param tÄ³¸öÊ±¼äµÄÎ»ÖÃ
-	 * @return ²åÖµ¾ØÕó
-	 */
+	//Aä¸ºNè¡Œ3åˆ—çš„ç‚¹
+	static void fit_sphere(const MatrixXd& A, Eigen::Vector3d& center, double& radius, double& rms);
+	//næ¬¡å¤šé¡¹å¼æ‹Ÿåˆï¼Œorderä¸ºå¤šé¡¹å¼æ¬¡æ•°ï¼Œcoeffä¸ºå¤šé¡¹å¼ç³»æ•°
+	static void polyfit(const std::vector<double>& v,const std::vector<double>& t, std::vector<double>& coeff, int order);
+	void polyfit_example();
+	//default by zyx
+	Eigen::Matrix4d eulerAngle_translate_ToMatrix(double zAngle,double yAngle,double xAngle,double transZ,double transY,double transX);
+
 	static Eigen::Quaterniond Quaternion_Slerp(Eigen::Quaterniond& start_q, Eigen::Quaterniond& end_q, double t);
 	static Eigen::Matrix4d RotateAroundAxisAtFixedPoint(const Eigen::Vector3d& point, const Eigen::Vector3d& dir, double angle);
 	static Eigen::Matrix3d GenerateRotationMatrix(const Eigen::Vector3d& vectorBefore, const Eigen::Vector3d& vectorAfter);
@@ -17,152 +20,41 @@ public:
 	static Eigen::Matrix4d ConvertCoordstoTransform(Eigen::Vector3d& o, Eigen::Vector3d& x, Eigen::Vector3d& y, Eigen::Vector3d& z);
 	static void ProjectToPlane(const double x[3], const double origin[3], const double normal[3], double xproj[3]);
 	static double AngleBetween2Vector(const double vec1[3], const double vec2[3], bool radian);
-	/**
-	 * @brief ¼ÆËãÁ½µã¾àÀë
-	 * @param double* Á½µãµÄµã¼¯
-	 * @return Á½µã¼ä¾àÀë
-	 */
+
 	static double DistanceBetweenTwoPoints(const double p1[3], const double p2[3]);
-	/**
-	 * @brief ¼ÆËãµãµ½Ö±ÏßµÄ¾àÀë
-	 * @param double* µãµÄ×ø±ê
-	 * @param double* Ö±ÏßÉÏÒ»¸öµãµÄ×ø±ê
-	 * @param double* Ö±ÏßµÄ·½ÏòÏòÁ¿(²»Ò»¶¨Îªµ¥Î»ÏòÁ¿)
-	 * @return µãµ½Ö±ÏßµÄ¾àÀë
-	 */
+
 	static double DistanceFromPointToLineWithDirectionVector(const double PointOutsideLine[3], const double PointOnLine[3], const double direction[3]);
-	/**
-	 * @brief ¼ÆËãµãµ½Æ½ÃæµÄ¾àÀë
-	 * @param double* µãµÄ×ø±ê
-	 * @param double* Æ½ÃæÉÏµãµÄ×ø±ê
-	 * @param double* Æ½ÃæÉÏµÄ·¨Ïß
-	 * @return µãµ½Ö±ÏßµÄ¾àÀë
-	 */
+
 	static double DistanceFromPointToPlane(const double x[3], const double p0[3], const double n[3]);
-	/**
-	 * @brief ¼ÆËãÁ½¸öÊ¸Á¿Ö®¼äµÄ½Ç¶È
-	 * @param Eigen::Vector3d µÚÒ»¸öÏòÁ¿
-	 * @param Eigen::Vector3d µÚ¶ş¸öÏòÁ¿
-	 * @param bool ½Ç¶ÈÀàĞÍ£¬Ä¬ÈÏÖµ£ºfalse£¬·µ»Ø¶ÈÊı£»ÉèÖÃÎªtrue·µ»Ø»¡¶ÈÀàĞÍ
-	 * @return double µãÔÚÆ½ÃæÉÏÍ¶Ó°µãµÄ×ø±ê
-	 */
+
 	static double AngleBetween2Vector(const Eigen::Vector3d vec1, const Eigen::Vector3d vec2, bool radian = false);
-	/**
-	 * @brief ¼ÆËãÁ½¸öÊ¸Á¿Ö®¼äµÄ½Ç¶È
-	 * @param double* µÚÒ»¸öÏòÁ¿
-	 * @param double* µÚ¶ş¸öÏòÁ¿
-	 * @param double* Æ½ÃæµÄÕı·¨Ïß£¨Æ½ĞĞÓÚ×ø±êÖá£©¡£
-	 * @param bool ½Ç¶ÈÀàĞÍ£¬Ä¬ÈÏÖµ£ºfalse£¬·µ»Ø¶ÈÊı£»ÉèÖÃÎªtrue·µ»Ø»¡¶ÈÀàĞÍ
-	 * @return double ·µ»ØµÄÁ½¸öÊ¸Á¿Ö®¼äµÄ½Ç¶È£¬ÓÉÓÚÓĞÕı·¨Ïß£¬½Ç¶È·¶Î§ÔÚ-180¶ÈÖÁ180¶ÈÖ®¼ä£¬Ä¬ÈÏ·µ»Ø½Ç¶È
-	 */
+
 	static double AngleBetween2Vector(const double vec1[3], const double vec2[3], const double normal[3], bool radian = false);
-	/**
-	 * @brief ¼ÆËãÁ½¸öÊ¸Á¿Ö®¼äµÄ½Ç¶È
-	 * @param Eigen::Vector3d µÚÒ»¸öÏòÁ¿
-	 * @param Eigen::Vector3d µÚ¶ş¸öÏòÁ¿
-	 * @param double* Æ½ÃæµÄÕı·¨Ïß£¨Æ½ĞĞÓÚ×ø±êÖá£©¡£
-	 * @param bool ·µ»ØÊÇ·ñÎª»¡¶È
-	 * @return double ·µ»ØµÄÁ½¸öÊ¸Á¿Ö®¼äµÄ½Ç¶È£¬ÓÉÓÚÓĞÕı·¨Ïß£¬Ä¬ÈÏ·µ½Ç¶È
-	 */
+
 	static double AngleBetween2Vector(const Eigen::Vector3d vec1, const Eigen::Vector3d vec2, const Eigen::Vector3d normal, bool radian = false);
-	/**
-	 * @brief ¼ÆËãÖ±ÏßºÍÖ±ÏßÖ®¼äµÄ½Ç¶È
-	 * @param double* Ö±ÏßÒ»ÉÏµÄµÚÒ»¸öµã
-	 * @param double* Ö±ÏßÒ»ÉÏµÄµÚ¶ş¸öµã
-	 * @param double* Ö±Ïß¶şÉÏµÄµÚÒ»¸öµã
-	 * @param double* Ö±Ïß¶şÉÏµÄµÚ¶ş¸öµã
-	 * @param bool ·µ»ØÊÇ·ñÎª»¡¶È
-	 * @return double ·µ»ØµÄÁ½¸öÊ¸Á¿Ö®¼äµÄ½Ç¶È£¬ÓÉÓÚÓĞÕı·¨Ïß£¬Ä¬ÈÏ·µ½Ç¶È
-	 */
+
 	static double AngleBetween2Line(const double* p11, const double* p12, const double* p21, const double* p22, bool radian = false);
-	/**
-	 * @brief ¼ÆËãÖ±ÏßºÍÆ½ÃæÖ®¼äµÄ½Ç¶È
-	 * @param double* Ö±ÏßÒ»ÉÏµÄµÚÒ»¸öµã
-	 * @param double* Ö±ÏßÒ»ÉÏµÄµÚ¶ş¸öµã
-	 * @param double* Æ½ÃæµÄ·¨Ïß
-	 * @param bool ·µ»ØÊÇ·ñÎª»¡¶È
-	 * @return double ·µ»ØÖ±ÏßºÍÆ½ÃæÖ®¼äµÄ½Ç¶È
-	 */
+
 	static double AngleBetweenLineAndPlane(const double* p1, const double* p2, const double* normal, bool radian = false);
-	/**
-	 * @brief ¼ÆËãÖ±ÏßºÍÆ½ÃæÖ®¼äµÄ½Ç¶È
-	 * @param Eigen::Vector3d µÄ·½ÏòÏòÁ¿
-	 * @param Eigen::Vector3d Æ½ÃæµÄ·¨ÏòÁ¿
-	 * @param bool ·µ»ØÊÇ·ñÎª»¡¶È
-	 * @return double ·µ»ØÖ±ÏßºÍÆ½ÃæÖ®¼äµÄ½Ç¶È
-	 */
+
 	static double AngleBetweenLineAndPlane(const Eigen::Vector3d vec, const Eigen::Vector3d normal, bool radian = false);
-	/**
-	 * @brief ÔÚ¶şÎ¬ÖĞÓÃÒ»×éµãÄâºÏÒ»¸öÔ²
-	 * @param std::vector<double>& µã¼¯x×ø±ê¼¯ºÏ
-	 * @param std::vector<double>& µã¼¯y×ø±ê¼¯ºÏ
-	 * @param double& Ô²ĞÄµãx×ø±ê
-	 * @param double& Ô²ĞÄµãy×ø±ê
-	 */
+
 	static void fit_circle_2d(std::vector<double>& inp_x, std::vector<double>& inp_y, double& outp_Cx, double& outp_Cy, double& outp_R);
 
-	/**
-	 * @brief ÔÚÈıÎ¬ÖĞÓÃÒ»×éµãÄâºÏÒ»¸öÔ²
-	 * @param std::vector<double>& µã¼¯×ø±ê
-	 * @param std::vector<double>& Ô²ĞÄ
-	 * @param double& °ë¾¶
-	 * @param double& ·¨Ïß
-	 */
 	static bool fit_circle_3d(std::vector<double>& inp_pointset, std::array<double, 3>& outp_center, double& outp_radius,
 		std::array<double, 3>& outp_normal);
-	/**
-	 * @brief ÔÚÈıÎ¬ÖĞÓÃÒ»×éµãÄâºÏÒ»¸öÔ²
-	 * @param std::vector<double>& µã¼¯×ø±ê
-	 * @param std::vector<double>& µã¼¯Ô²ĞÄ
-	 * @param std::vector<double>& µã¼¯°ë¾¶
-	 * @param double& ÇòĞÄx×ø±ê
-	 * @param double& ÇòĞÄy×ø±ê
-	 * @param double& ÇòĞÄz×ø±ê
-	 * @param double& ÇòµÄ°ë¾¶
-	 */
+
 	static bool fit_sphere(std::vector<double>& inp_x, std::vector<double>& inp_y, std::vector<double>& inp_z, double& outp_cx, double& outp_cy, double& outp_cz, double& outp_R);
-	/**
-	 * @brief ÔÚÈıÎ¬ÖĞÓÃÒ»×éµãÄâºÏÒ»¸öÔ²
-	 * @param std::vector<double>&µã¼¯×ø±ê£¬°´x1,y1,z1,x2,y2,z2...Ë³ĞòÊäÈë
-	 * @param double& ÇòĞÄ×ø±ê
-	 * @param double& ÇòµÄ°ë¾¶
-	 */
+
 	static bool fit_sphere(std::vector<double>& inp_pSet, std::array<double, 3>& outp_center, double& outp_r);
-	/**
-	 * @brief ÔÚÈıÎ¬ÖĞÓÃÒ»×éµãÄâºÏÒ»¸öÔ²
-	 * @param std::vector<std::array<double, 3>>&µã×ø±ê¼¯ºÏ£¬
-	 * @param double& ÇòĞÄ×ø±ê
-	 * @param double& ÇòµÄ°ë¾¶
-	 */
+
 	static bool fit_sphere(std::vector<std::array<double, 3>>& inp_pSet, std::array<double, 3>& outp_center, double& outp_r);
 
-	/**
-	 * @brief ½«Ò»×éÖÁÉÙ4¸ö¿Õ¼äµãÄâºÏµ½Ò»¸ö¹Ì¶¨°ë¾¶µÄÇòÌåÖĞ¡£
-	 * @param std::vector<double>& µã¼¯x×ø±ê
-	 * @param std::vector<double>& µã¼¯y×ø±ê
-	 * @param std::vector<double>& µã¼¯z×ø±ê
-	 * @param std::vector<double>& ÇòÌåµÄ°ë¾¶
-	 * @param double& ÇòĞÄx×ø±ê
-	 * @param double& ÇòĞÄy×ø±ê
-	 * @param double& ÇòĞÄz×ø±ê
-	 */
 	static bool fit_sphere_fixR(const std::vector<double>& inp_x, const std::vector<double>& inp_y, const std::vector<double>& inp_z, const double inp_r,
 		double& outp_cx, double& outp_cy, double& outp_cz);
 
-	/**
-	 * @brief µã¼¯ÄâºÏÆ½Ãæ
-	 * @param std::vector<double>& µã¼¯×ø±ê
-	 * @param double& Æ½ÃæÖĞĞÄ
-	 * @param double& Æ½Ãæ·¨Ïß
-	 */
 	static bool fit_plane(const std::vector<double>& inp_pSet, std::array<double, 3>& outp_center, std::array<double, 3>& outp_normal);
 
-	/**
-	 * @brief µã¼¯ÄâºÏ¾ØĞÎ
-	 * @param std::vector<double>& µã¼¯×ø±ê
-	 * @param double& Æ½ÃæÖĞĞÄ
-	 * @param double& Æ½Ãæ·¨Ïß
-	 */
 	static bool fit_rectangle(const std::vector<double>& inp_pSet, std::array<double, 3>& outp_center, std::array<double, 3>& outp_normal, std::array<double, 3>& outp_x,
 		std::array<double, 3>& outp_y, double& length, double& width);
 };

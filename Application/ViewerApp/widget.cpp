@@ -8,7 +8,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
-Widget::Widget(QWidget *parent)
+Widget::Widget(QWidget *parent,PluginInterface *interface)
     : QWidget(parent)
     , ui(new Ui::Widget)
 {
@@ -166,6 +166,11 @@ void Widget::on_pushButton_broadcast_clicked()
                     ui->listWidget->addItem(plugin->get_name());
                     ui->stackedWidget->insertWidget(0, plugin->createWidget());
                 }
+                PluginMetaData m;
+                m.blocking = 0;
+                m.priority = 1;
+                m.msg = QString("hello,i'm ") + plugin->get_name();
+                plugin->sendMsg2Manager(m);
             }
             else
                 qDebug() << "插件不存在";
