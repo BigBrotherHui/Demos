@@ -1,5 +1,16 @@
 <RCC>
     <qresource prefix="/">
         <file>resources/example.json</file>
+        <file>resources/continuous_mode.png</file>
+        <file>resources/default_mode.png</file>
+        <file>resources/discrete_mode.png</file>
+        <file>resources/display_normal.png</file>
+        <file>resources/face_mode.png</file>
+        <file>resources/icp.png</file>
+        <file>resources/multi_vertex_mode.png</file>
+        <file>resources/observe_mode.png</file>
+        <file>resources/segment.png</file>
+        <file>resources/vertex_mode.png</file>
+        <file>resources/wireframe_mode.png</file>
     </qresource>
 </RCC>

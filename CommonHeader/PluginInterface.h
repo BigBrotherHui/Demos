@@ -60,7 +60,7 @@ public:
         return nullptr;
     }
 protected:
-    WidgetBase* m_widget{ nullptr };
+    QWidget* m_widget{ nullptr };
 };
 Q_DECLARE_INTERFACE(PluginUIInterface, "org.galaxyworld.plugins.PluginUIInterface/1.0")
 #endif // PLUGININTERFACE_H

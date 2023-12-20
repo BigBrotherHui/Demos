@@ -7,6 +7,10 @@
 		{
             "PageIndex": 1,
             "PluginClassName": "PluginSharedDataStorage"
+        },
+		{
+            "PageIndex": 2,
+            "PluginClassName": "PluginExample"
         }
     ]
 }

@@ -18,7 +18,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 set(PROJECT_SOURCES
         ${SOURCE_FILES} ${HEADER_FILES} ${UI_FILES} ${QRC_FILES}
 )
-
+set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 source_group("Header Files" REGULAR_EXPRESSION ".h$")
 source_group("Source Files" FILES ${SRC_FILES})
 source_group("Forms" REGULAR_EXPRESSION ".ui$")

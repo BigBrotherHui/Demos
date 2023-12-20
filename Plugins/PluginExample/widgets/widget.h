@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#undef REGISTERED
 #include <mitkStandaloneDataStorage.h>
 #include <mitkDataNode.h>
 #include "PluginInterface.h"

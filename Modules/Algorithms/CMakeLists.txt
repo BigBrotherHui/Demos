@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE HEADER_FILES "*.h")
 find_package(Eigen3 REQUIRED)
+find_package(VTK REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 set(PROJECT_SOURCES
         ${SOURCE_FILES} ${HEADER_FILES} 
@@ -34,3 +35,4 @@ else()
 endif()
 # 设置筛选器
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Modules")
+target_link_libraries(${PROJECT_NAME} PRIVATE ${VTK_LIBRARIES})

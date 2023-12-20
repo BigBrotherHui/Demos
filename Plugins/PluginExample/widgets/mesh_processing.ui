@@ -1,0 +1,712 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MeshProcessingClass</class>
+ <widget class="QMainWindow" name="MeshProcessingClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1447</width>
+    <height>1169</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>MeshProcessing</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,5">
+    <item>
+     <widget class="QTabWidget" name="tab_widget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="tab_model">
+       <attribute name="title">
+        <string>模型</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QListWidget" name="list_widget_model">
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectItems</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_process">
+       <attribute name="title">
+        <string>流程</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QScrollArea" name="register_scroll_area">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>183</width>
+             <height>1004</height>
+            </rect>
+           </property>
+           <widget class="QGroupBox" name="groupBox">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>10</y>
+              <width>191</width>
+              <height>111</height>
+             </rect>
+            </property>
+            <property name="title">
+             <string>参数设置</string>
+            </property>
+            <widget class="QLabel" name="label">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>50</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>最小误差</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+            <widget class="QDoubleSpinBox" name="min_error_double_spin_box">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>50</y>
+               <width>71</width>
+               <height>22</height>
+              </rect>
+             </property>
+             <property name="singleStep">
+              <double>0.010000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.010000000000000</double>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_2">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>20</y>
+               <width>61</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>最大迭代数</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+            <widget class="QSpinBox" name="max_iter_spin_box">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>20</y>
+               <width>71</width>
+               <height>22</height>
+              </rect>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="value">
+              <number>50</number>
+             </property>
+            </widget>
+            <widget class="QRadioButton" name="move_center_radio_button">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>80</y>
+               <width>89</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>中心对齐</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </widget>
+           <widget class="QPushButton" name="run_icp_button">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>140</y>
+              <width>191</width>
+              <height>23</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>进行ICP配准</string>
+            </property>
+           </widget>
+           <widget class="QGroupBox" name="groupBox_2">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>180</y>
+              <width>191</width>
+              <height>221</height>
+             </rect>
+            </property>
+            <property name="title">
+             <string>统计</string>
+            </property>
+            <widget class="QLabel" name="label_3">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>20</y>
+               <width>61</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>迭代次数</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_4">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>50</y>
+               <width>61</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>误差</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="iter_num_label">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>20</y>
+               <width>71</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+            <widget class="QLabel" name="error_label">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>50</y>
+               <width>71</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_5">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>80</y>
+               <width>61</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>转移矩阵</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="matrix_label">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>100</y>
+               <width>171</width>
+               <height>121</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </widget>
+           <widget class="QPushButton" name="exit_icp_button">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>410</y>
+              <width>91</width>
+              <height>23</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>确认</string>
+            </property>
+           </widget>
+           <widget class="QPushButton" name="cancel_icp_button">
+            <property name="geometry">
+             <rect>
+              <x>110</x>
+              <y>410</y>
+              <width>91</width>
+              <height>23</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>取消</string>
+            </property>
+           </widget>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QScrollArea" name="segment_scroll_area">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents_2">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>183</width>
+             <height>1004</height>
+            </rect>
+           </property>
+           <widget class="QGroupBox" name="groupBox_3">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>10</y>
+              <width>191</width>
+              <height>101</height>
+             </rect>
+            </property>
+            <property name="title">
+             <string>参数设置</string>
+            </property>
+            <widget class="QLabel" name="label_6">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>30</y>
+               <width>54</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>种子个数</string>
+             </property>
+            </widget>
+            <widget class="QSpinBox" name="seed_num_spin_box">
+             <property name="geometry">
+              <rect>
+               <x>90</x>
+               <y>30</y>
+               <width>91</width>
+               <height>22</height>
+              </rect>
+             </property>
+             <property name="minimum">
+              <number>2</number>
+             </property>
+             <property name="maximum">
+              <number>10000</number>
+             </property>
+             <property name="value">
+              <number>64</number>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_7">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>60</y>
+               <width>71</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>测地距占比</string>
+             </property>
+            </widget>
+            <widget class="QDoubleSpinBox" name="phy_ratio_double_spin_box">
+             <property name="geometry">
+              <rect>
+               <x>90</x>
+               <y>60</y>
+               <width>91</width>
+               <height>22</height>
+              </rect>
+             </property>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.030000000000000</double>
+             </property>
+            </widget>
+           </widget>
+           <widget class="QPushButton" name="run_segment_button">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>120</y>
+              <width>191</width>
+              <height>23</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true"/>
+            </property>
+            <property name="text">
+             <string>进行分割</string>
+            </property>
+           </widget>
+           <widget class="QPushButton" name="exit_segment_button">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>230</y>
+              <width>91</width>
+              <height>23</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>确认</string>
+            </property>
+           </widget>
+           <widget class="QPushButton" name="cancel_segment_button">
+            <property name="geometry">
+             <rect>
+              <x>110</x>
+              <y>230</y>
+              <width>91</width>
+              <height>23</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>取消</string>
+            </property>
+           </widget>
+           <widget class="QSlider" name="cluster_num_slider">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>190</y>
+              <width>191</width>
+              <height>22</height>
+             </rect>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+           <widget class="QLabel" name="label_8">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>160</y>
+              <width>101</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>调整分割块数</string>
+            </property>
+           </widget>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="VTKWidget" name="vtk_widget" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>1007</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="property_label">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1447</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="open_file_action"/>
+    <addaction name="read_color_table_action"/>
+    <addaction name="write_color_table_action"/>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>区域填充</string>
+    </property>
+    <addaction name="fill_region_three_vertices_action"/>
+    <addaction name="fill_region_two_vertices_action"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_2"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="wireframe_mode_action"/>
+   <addaction name="separator"/>
+   <addaction name="observe_mode_action"/>
+   <addaction name="vertex_mode_action"/>
+   <addaction name="face_mode_action"/>
+   <addaction name="multi_vertex_mode_action"/>
+   <addaction name="separator"/>
+   <addaction name="display_normal_action"/>
+   <addaction name="separator"/>
+   <addaction name="default_mode_action"/>
+   <addaction name="discrete_mode_action"/>
+   <addaction name="continuous_mode_action"/>
+   <addaction name="separator"/>
+   <addaction name="icp_registraion_action"/>
+   <addaction name="segment_action"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="open_file_action">
+   <property name="text">
+    <string>打开</string>
+   </property>
+  </action>
+  <action name="actionsave">
+   <property name="text">
+    <string>保存</string>
+   </property>
+  </action>
+  <action name="observe_mode_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/observe_mode.png</normaloff>:/:/resources/observe_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>observe_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>切换至观察模式</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
+   </property>
+  </action>
+  <action name="vertex_mode_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/vertex_mode.png</normaloff>:/resources/vertex_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>vertex_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>切换至点拾取模式</string>
+   </property>
+   <property name="shortcut">
+    <string>F2</string>
+   </property>
+  </action>
+  <action name="face_mode_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/face_mode.png</normaloff>:/resources/face_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>face_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>切换至面拾取模式</string>
+   </property>
+  </action>
+  <action name="wireframe_mode_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/wireframe_mode.png</normaloff>:/resources/wireframe_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>wireframe_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>开启/关闭线框模式</string>
+   </property>
+  </action>
+  <action name="display_normal_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/display_normal.png</normaloff>:/resources/display_normal.png</iconset>
+   </property>
+   <property name="text">
+    <string>display_normal</string>
+   </property>
+   <property name="toolTip">
+    <string>显示选中面片的法向</string>
+   </property>
+  </action>
+  <action name="read_color_table_action">
+   <property name="text">
+    <string>读入颜色表</string>
+   </property>
+  </action>
+  <action name="default_mode_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/default_mode.png</normaloff>:/resources/default_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>default_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>默认显示模式</string>
+   </property>
+  </action>
+  <action name="discrete_mode_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/discrete_mode.png</normaloff>:/resources/discrete_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>discrete_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>离散颜色显示模式</string>
+   </property>
+  </action>
+  <action name="continuous_mode_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/continuous_mode.png</normaloff>:/resources/continuous_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>continuous_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>连续颜色显示模式</string>
+   </property>
+  </action>
+  <action name="multi_vertex_mode_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/multi_vertex_mode.png</normaloff>:/resources/multi_vertex_mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>multi_vertex_mode</string>
+   </property>
+   <property name="toolTip">
+    <string>切换至多顶点拾取模式</string>
+   </property>
+  </action>
+  <action name="fill_region_three_vertices_action">
+   <property name="text">
+    <string>模式一（三顶点）</string>
+   </property>
+  </action>
+  <action name="fill_region_two_vertices_action">
+   <property name="text">
+    <string>模式二（双顶点）</string>
+   </property>
+  </action>
+  <action name="icp_registraion_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/icp.png</normaloff>:/resources/icp.png</iconset>
+   </property>
+   <property name="text">
+    <string>icp_registration</string>
+   </property>
+   <property name="toolTip">
+    <string>ICP配准</string>
+   </property>
+  </action>
+  <action name="segment_action">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/resources/segment.png</normaloff>:/resources/segment.png</iconset>
+   </property>
+   <property name="text">
+    <string>segment</string>
+   </property>
+  </action>
+  <action name="write_color_table_action">
+   <property name="text">
+    <string>导出颜色表</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>VTKWidget</class>
+   <extends>QWidget</extends>
+   <header>vtk_widget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
