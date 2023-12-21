@@ -7,9 +7,35 @@
 #include <mitkPointSet.h>
 #include <mitkIOUtil.h>
 #include <mitkDisplayActionEventHandlerStd.h>
+#include "cereal/archives/json.hpp"
+#include <fstream>
+class PT
+{
+public:
+    int x, y;
+private:
+    friend class cereal::access;  // 声明cereal::access为友元类，以便访问私有成员（一定要有，否则会编译报错）
+    // define a serialization function
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(CEREAL_NVP(x), CEREAL_NVP(y));
+    }
+};
 Widget::Widget(QWidget *parent)
     : WidgetBase(parent)
 {
+    PT a;
+    a.x = 100;
+    a.y = 121;
+    std::ofstream os("PT.json",std::ios::trunc);
+    cereal::JSONOutputArchive ar(os);
+    ar(cereal::make_nvp("PT", a));
+
+    std::ifstream is("PT.json");  // open an xml file for input
+    cereal::JSONInputArchive iarchive(is);         // create an xml input archive
+    iarchive(a);
+
     QVBoxLayout* l = new QVBoxLayout(this);
     m_rw = new QmitkRenderWindow(this);
     m_rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);

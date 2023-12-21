@@ -30,6 +30,9 @@ include_directories(${CMAKE_SOURCE_DIR}/CommonHeader)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/widgets)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/data_structure)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
+INCLUDE_DIRECTORIES(  
+${CMAKE_SOURCE_DIR}/ThirdParty
+)
 add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCES})
 target_compile_definitions(${PROJECT_NAME} PUBLIC PLUGINEXAMPLE_DLL)
 #设置输出目录（属性-》常规-》输出目录）（不需要改动）

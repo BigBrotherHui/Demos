@@ -1,4 +1,3 @@
-
 add_subdirectory(PluginExample)
 add_subdirectory(PluginPolyDataToImage)
 add_subdirectory(PluginSharedDataStorage)

@@ -5,6 +5,7 @@
 int PluginExample::typeId = qRegisterMetaType<PluginExample*>("PluginExample");
 PluginExample::PluginExample()
 {
+
 }
 
 PluginExample::~PluginExample()
@@ -14,6 +15,6 @@ PluginExample::~PluginExample()
 QWidget* PluginExample::createWidget()
 {
 	if(!m_widget)
-		m_widget = new MeshProcessing;
+		m_widget = new Widget;
 	return m_widget;
 }
