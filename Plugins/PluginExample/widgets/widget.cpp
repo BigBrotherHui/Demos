@@ -102,7 +102,6 @@ void bspCurve(int p, const std::vector<Eigen::Vector3d>& dataPoints, int bType) 
     std::vector<Eigen::Vector3d> controlPoints;
     if (fType == 0) bc = fitter.interpolateCurve(p, dataPoints, controlPoints, bType);
     else bc = fitter.approximateCurve(p, bcH, dataPoints, controlPoints);
-
     error = 0;
     std::default_random_engine random(static_cast<int>(time(nullptr)));
     uniform_real_distribution<double> uniformDistribution(0.0, 1.0);
@@ -112,6 +111,7 @@ void bspCurve(int p, const std::vector<Eigen::Vector3d>& dataPoints, int bType) 
         error += (samplePoint - (*bc)(controlPoints, u)).norm();
     }
     error /= radius * sampleNum;
+
     int dataNum = static_cast<int>(dataPoints.size());
     std::vector<Eigen::Vector3d> data(dataNum);
     for (int i = 0; i < dataNum; i++) {
@@ -122,6 +122,7 @@ void bspCurve(int p, const std::vector<Eigen::Vector3d>& dataPoints, int bType) 
         pointIndex[i] = i;
     }
     int h = static_cast<int>(controlPoints.size()) - 1;
+
     std::vector<int> controlPointIndex;
     for (int i = 0; i <= h; i++) {
         controlPointIndex.push_back(i);
@@ -147,8 +148,12 @@ void bspSurface(int p,
     int uType,
     int vType) {
     std::vector<vector<Eigen::Vector3d>> controlPoints;
-    if (fType == 0) bs = fitter.interpolateSurface(p, q, dataPoints, controlPoints, uType, vType);
-    else bs = fitter.approximateSurface(p, q, bsE, bsF, dataPoints, controlPoints);
+    if (fType == 0) {
+        bs = fitter.interpolateSurface(p, q, dataPoints, controlPoints, uType, vType);
+    }
+    else {
+        bs = fitter.approximateSurface(p, q, bsE, bsF, dataPoints, controlPoints);
+    }
 
     error = 0;
     std::default_random_engine random(static_cast<int>(time(nullptr)));
@@ -165,6 +170,7 @@ void bspSurface(int p,
         }
     }
     error /= radius * sampleNum * sampleNum;
+
     int m = static_cast<int>(dataPoints.size()), n = static_cast<int>(dataPoints[0].size());
     std::vector<Eigen::Vector3d> data(m * n);
     for (int i = 0; i < m; ++i) {
@@ -254,13 +260,10 @@ Widget::Widget(QWidget *parent)
     l->addWidget(m_rw);
     l->setContentsMargins(0, 0, 0, 0);
 
-    //qDebug() << "111";
-    //generateCircle(dataNum);
-    //qDebug() << "112";
-    //bspCurve(bcP, *curveDataPoints, bType);
-    //qDebug() << "113";
-    //bspSurface(bsP, bsQ, *surfaceDataPoints, uType, vType);
-    //qDebug() << "114";
+    generateCircle(dataNum);
+    generateSphere(dataNum);
+    bspCurve(bcP, *curveDataPoints, bType);
+    bspSurface(bsP, bsQ, *surfaceDataPoints, uType, vType);
 }
 
 Widget::~Widget()

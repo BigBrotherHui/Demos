@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 
 #include "BSpline.h"
+#include <QDebug>
 
 using namespace std;
 
