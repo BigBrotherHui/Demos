@@ -1,12 +1,13 @@
 #pragma once
-
+#include "Fitter.h"//有包含Eigen头文件的头文件必须放在所有mitk文件前面
 #include <QWidget>
-#undef REGISTERED
+#undef REGISTERED//必须在所有mitk头文件前面
 #include <mitkStandaloneDataStorage.h>
 #include <mitkDataNode.h>
 #include "PluginInterface.h"
 #include <mitkDisplayActionEventBroadcast.h>
 #include <mitkDisplayActionEventHandler.h>
+
 class QmitkRenderWindow;
 class Widget : public WidgetBase
 {
@@ -28,3 +29,6 @@ private:
     mitk::DisplayActionEventBroadcast::Pointer m_DisplayActionEventBroadcast;
     std::unique_ptr<mitk::DisplayActionEventHandler> m_DisplayActionEventHandler;
 };
+
+
+

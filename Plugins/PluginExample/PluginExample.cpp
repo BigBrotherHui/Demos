@@ -2,6 +2,7 @@
 #include "widget.h"
 #include <iostream>
 #include "mesh_processing.h"
+
 int PluginExample::typeId = qRegisterMetaType<PluginExample*>("PluginExample");
 PluginExample::PluginExample()
 {

@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(VTK REQUIRED)
 find_package(MITK 2023.04 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 file(GLOB_RECURSE SOURCE_FILES "*.cpp" "*.cxx")
 file(GLOB_RECURSE HEADER_FILES "*.h")
@@ -30,6 +31,7 @@ include_directories(${CMAKE_SOURCE_DIR}/CommonHeader)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/widgets)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/data_structure)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
+include_directories(${EIGEN3_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(  
 ${CMAKE_SOURCE_DIR}/ThirdParty
 )
