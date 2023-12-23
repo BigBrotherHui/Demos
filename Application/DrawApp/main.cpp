@@ -1,17 +1,11 @@
-﻿#include <QApplication>
+#include <QApplication>
 #include <QDesktopWidget>
 #include <QTextCodec>
 #include "mainwindow.h"
 int main(int argc, char *argv[]) {
   Q_INIT_RESOURCE(app);
   QApplication a(argc, argv);
-  QString styleName;
-  #ifdef Q_OS_WIN
-    styleName = "Windows";
-#elif defined(Q_OS_MACOS)
-    styleName = "Macintosh";
-#endif
-    QApplication::setStyle(styleName);
+
   QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
   QString fontPath_Medium = QString("%1/SourceHanSansCN-Medium.otf")
                                 .arg(QCoreApplication::applicationDirPath());

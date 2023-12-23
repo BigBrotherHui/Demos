@@ -185,16 +185,6 @@ class GraphicsItem : public QObject, public AbstractShapeType<QGraphicsItem> {
   QSet<Group *> groups();
   virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
   virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
-  void createHandles() {
-    if (!iscreatehandles) {
-      m_handles.reserve(Left);
-      for (int i = LeftTop; i <= Left; ++i) {
-        SizeHandleRect *shr = new SizeHandleRect(this, i);
-        m_handles.push_back(shr);
-      }
-      iscreatehandles = 1;
-    }
-  }
  signals:
   void selectedChange(QGraphicsItem *item);
 

@@ -59,24 +59,24 @@ font-weight: 500;
 color: #AFB0B3;
 }
 QPushButton{
-border: 2px solid #bbff73;
+border: 2px solid #495368;
 border-radius: 22px;
 background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-stop:0 #e2ffc6,stop:1 #2A3345);
+stop:0 #55627C,stop:1 #2A3345);
 color: #DFE1E6;
 font-size: 18px;
 font-family: &quot;思源黑体 CN Medium&quot;;
 font-weight: 500;
 }
 QPushButton:hover{
-background: #f5ffe9;
+background: #5C6984;
 color: #DFE1E6;
 font-size: 18px;
 font-family: &quot;思源黑体 CN Medium&quot;;
 font-weight: 500;
 }
 .GrayButton:pressed {
-background: #5aff3d;
+background: #2D3749;
 color: #DFE1E6;
 font-size: 18px;
 font-family: &quot;思源黑体 CN Medium&quot;;
@@ -85,7 +85,7 @@ font-weight: 500;
 QPushButton:disabled {
 border: 2px solid #282E3B;
 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-stop:0 #70ff75,stop:1 #6aff49);
+stop:0 #2B313F,stop:1 #222733);
 color: #5C6069;
 font-size: 18px;
 font-family: &quot;思源黑体 CN Medium&quot;;

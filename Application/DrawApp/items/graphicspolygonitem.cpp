@@ -1,4 +1,4 @@
-﻿#include "graphicspolygonitem.h"
+#include "graphicspolygonitem.h"
 #include "drawobj.h"
 #include "drawscene.h"
 #include "util.h"
@@ -151,7 +151,6 @@ void GraphicsPolygonItem::endPoint(const QPointF &point) {
 
 QGraphicsItem *GraphicsPolygonItem::duplicate() const {
   GraphicsPolygonItem *item = new GraphicsPolygonItem();
-  item->createHandles();
   item->m_width = width();
   item->m_height = height();
   item->m_points = m_points;

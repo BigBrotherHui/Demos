@@ -1,4 +1,4 @@
-﻿#ifndef GDSIMPORTER_H
+#ifndef GDSIMPORTER_H
 #define GDSIMPORTER_H
 
 #include <QObject>
@@ -7,8 +7,7 @@ class gdsimporter : public QObject {
  public:
   gdsimporter();
   static gdsimporter *instance();
-  void parseFile(QString path, std::vector<GraphicsItem *> &items);
-  void writeFile(QString path,const std::vector<GraphicsItem *> &items);
+  void parseFile(QString path, std::vector<QGraphicsItem *> &items);
 };
 
 #endif  // GDSIMPORTER_H

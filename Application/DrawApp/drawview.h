@@ -1,4 +1,4 @@
-﻿#ifndef DRAWVIEW_H
+#ifndef DRAWVIEW_H
 #define DRAWVIEW_H
 #include <QGraphicsView>
 
@@ -8,12 +8,11 @@
 #include "ruler.h"
 class Ruler;
 class QMouseEvent;
-class MapView;
+
 class DrawView : public QGraphicsView {
   Q_OBJECT
  public:
   DrawView(QGraphicsScene *scene);
-  ~DrawView();
   void zoomIn();
   void zoomOut();
 
@@ -23,16 +22,14 @@ class DrawView : public QGraphicsView {
   bool saveAs();
   bool saveFile(const QString &fileName);
   QString userFriendlyCurrentFile();
-  void show();
+
   QString currentFile() { return curFile; }
   void setModified(bool value) { modified = value; }
   bool isModified() const { return modified; }
-  void setToSubView() { m_isSubView=1; }
-  LayerManager *layerManager{nullptr};
  signals:
   void positionChanged(int x, int y);
   void sizeChanged();
-  void updateScene(QPixmap pixmap);
+
  protected:
   void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
   void wheelEvent(QWheelEvent *event) override;
@@ -59,10 +56,6 @@ class DrawView : public QGraphicsView {
   QPointF m_lastPointF;
   bool isPressed;
   Ruler *ruler;
-  bool m_isSubView{0};
-  bool m_isSaved{0};
-public:
-  MapView *mapView{nullptr};
 };
 
 #endif  // DRAWVIEW_H

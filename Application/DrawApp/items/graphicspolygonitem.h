@@ -1,4 +1,4 @@
-﻿#ifndef GRAPHICSPOLYGONITEM_H
+#ifndef GRAPHICSPOLYGONITEM_H
 #define GRAPHICSPOLYGONITEM_H
 #include "graphicsitem.h"
 class GraphicsPolygonItem : public GraphicsItem {
@@ -15,7 +15,7 @@ class GraphicsPolygonItem : public GraphicsItem {
   virtual bool saveToXml(QXmlStreamWriter *xml);
   QString displayName() const { return QObject::tr("polygon"); }
   QGraphicsItem *duplicate() const;
-  QPolygonF points() { return m_points; }
+
  protected:
   void updatehandles();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,

@@ -36,6 +36,5 @@
         <file>icons/paste.png</file>
         <file>icons/text.png</file>
         <file>icons/drag.png</file>
-        <file>icons/instance.png</file>
     </qresource>
 </RCC>

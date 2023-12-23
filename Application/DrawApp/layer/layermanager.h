@@ -1,4 +1,4 @@
-﻿#ifndef LAYERMANAGER_H
+#ifndef LAYERMANAGER_H
 #define LAYERMANAGER_H
 
 #include <QObject>
@@ -10,17 +10,14 @@ class QTreeWidgetItem;
 class QGraphicsItem;
 class QXmlStreamReader;
 class QListWidget;
-class QTreeWidget;
-
 class LayerManager : public QObject {
   Q_OBJECT
  public:
-//  static LayerManager *GetInstance();
-    LayerManager(DrawScene *scene,QObject *parent = nullptr);
-    ~LayerManager();
+  static LayerManager *GetInstance();
+  void SetLayerWidget(QTreeWidget *w);
   void SetItemWidget(QListWidget *w);
-  Layer *AddLayer();
-  void AddLayer(Layer *l);
+  Layer *AddLayer(DrawScene *scene);
+  void AddLayer(Layer *l, DrawScene *scene);
   void RemoveLayer(Layer *);
   void SetCurrentLayer(Layer *l) {
     if (m_curlayer != l) m_curlayer = l;
@@ -33,21 +30,20 @@ class LayerManager : public QObject {
   static Layer *loadFromXml(QXmlStreamReader *r, DrawScene *scene);
   void refreshItemWidget();
   void selectItemByType(QString t);
-  QTreeWidget *layerwidget{nullptr};
-  void refreshLayerWidget();
  signals:
   void layerChanged();
 
  protected:
+  LayerManager(QObject *parent = nullptr);
   Layer *GetLayer(int rowNo);
   void slot_cellClicked(QTreeWidgetItem *item, int);
-  void SetLayerWidget(QTreeWidget *w);
 
  private:
   QList<Layer *> m_layers;
   Layer *m_curlayer{nullptr};
   int maxlayer = -1;
   DrawScene *m_scene{nullptr};
+  QTreeWidget *layerwidget{nullptr};
   QListWidget *itemwidget{nullptr};
   std::map<QTreeWidgetItem *, Layer *> layermap;
 };

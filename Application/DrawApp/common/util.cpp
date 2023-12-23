@@ -1,4 +1,5 @@
-﻿#include "util.h"
+#include "util.h"
+
 QPainterPath qt_graphicsItem_shapeFromPath(const QPainterPath &path,
                                            const QPen &pen) {
   // We unfortunately need this hack as QPainterPathStroker will set a width

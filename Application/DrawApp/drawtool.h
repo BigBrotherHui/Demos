@@ -3,7 +3,6 @@
 
 #include "drawobj.h"
 #include "drawscene.h"
-#include "graphicsinstanceitem.h"
 #include "graphicsitemgroup.h"
 QT_BEGIN_NAMESPACE
 class QGraphicsScene;
@@ -31,8 +30,7 @@ enum DrawShape {
   bezier,
   polygon,
   polyline,
-  text,
-  instance
+  text
 };
 
 class DrawTool : public QObject {
@@ -90,7 +88,6 @@ class RotationTool : public DrawTool {
 };
 
 class RectTool : public DrawTool {
-  Q_OBJECT
  public:
   RectTool(DrawShape drawShape);
   virtual void mousePressEvent(QGraphicsSceneMouseEvent *event,
@@ -99,11 +96,7 @@ class RectTool : public DrawTool {
                               DrawScene *scene);
   virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event,
                                  DrawScene *scene);
-  virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event,
-                                     DrawScene *scene) override;
   GraphicsItem *item;
- signals:
-  void signal_instanceItemDoubleClicked(GraphicsInstanceItem *);
 };
 
 class PolygonTool : public DrawTool {
