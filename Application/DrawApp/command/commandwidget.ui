@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CommandWidget</class>
+ <widget class="QWidget" name="CommandWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>540</width>
+    <height>769</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QPlainTextEdit QScrollBar
+{
+background:#131720;
+}
+QPlainTextEdit QScrollBar::handle
+{
+background:#1167CF;
+min-height:50px;
+}
+QPlainTextEdit QScrollBar::add-line
+{
+border: none;
+background:#131720;
+}
+QPlainTextEdit QScrollBar::sub-line
+{
+border:none;
+background:#131720;
+}
+#plainTextEdit_info QScrollBar::add-page
+{
+background:#131720;
+}
+QPlainTextEdit QScrollBar::sub-page
+{
+background:#131720;
+}
+QPlainTextEdit
+{
+background: #2c313e;
+border:2px solid #a1a1a1;
+font-size: 16px;
+font-family: &quot;思源黑体 CN Medium&quot;;
+font-weight: 500;
+color: #ffffff;
+selection-background-color: #1167cf;
+}
+QLabel
+{
+font-size: 18px;
+font-family: &quot;思源黑体 CN Medium&quot;;
+font-weight: 500;
+color: #AFB0B3;
+}
+QPushButton{
+border: 2px solid #bbff73;
+border-radius: 22px;
+background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+stop:0 #e2ffc6,stop:1 #2A3345);
+color: #DFE1E6;
+font-size: 18px;
+font-family: &quot;思源黑体 CN Medium&quot;;
+font-weight: 500;
+}
+QPushButton:hover{
+background: #f5ffe9;
+color: #DFE1E6;
+font-size: 18px;
+font-family: &quot;思源黑体 CN Medium&quot;;
+font-weight: 500;
+}
+.GrayButton:pressed {
+background: #5aff3d;
+color: #DFE1E6;
+font-size: 18px;
+font-family: &quot;思源黑体 CN Medium&quot;;
+font-weight: 500;
+}
+QPushButton:disabled {
+border: 2px solid #282E3B;
+background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+stop:0 #70ff75,stop:1 #6aff49);
+color: #5C6069;
+font-size: 18px;
+font-family: &quot;思源黑体 CN Medium&quot;;
+font-weight: 500;
+}
+* {
+    font-family: &quot;思源黑体 CN Medium&quot;;
+    font-size:15px;
+    /*background-color: #2d2d30;*/
+    color: #c7c7c7;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>20</number>
+   </property>
+   <item>
+    <layout class="QGridLayout" name="gridLayout_3">
+     <property name="spacing">
+      <number>20</number>
+     </property>
+     <item row="2" column="1">
+      <widget class="QPushButton" name="pushButton_wireSpace">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>wireSpace</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QPushButton" name="pushButton_remove">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Remove</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QPushButton" name="pushButton_netPriority">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>netPriority</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="pushButton_reroute">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Reroute</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QPushButton" name="pushButton_netTopo">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>netTopo</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="2">
+      <widget class="QLabel" name="label_3">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Interactive Routing</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QPushButton" name="pushButton_wireWidth">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>wireWidth</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="gridLayout">
+     <property name="spacing">
+      <number>20</number>
+     </property>
+     <item row="1" column="0">
+      <widget class="QPushButton" name="pushButton_autoPlace">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Auto Place</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="2">
+      <widget class="QLabel" name="label">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Paprika</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="pushButton_autoRoute">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Auto Route</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <property name="spacing">
+      <number>20</number>
+     </property>
+     <item row="0" column="0" colspan="2">
+      <widget class="QLabel" name="label_2">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Interactive Placement</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QPushButton" name="pushButton_move">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Move</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="pushButton_space">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Space</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QPushButton" name="pushButton_swap">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Swap</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QPushButton" name="pushButton_arrayAdd">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>arrayAdd</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QPushButton" name="pushButton_symAdd">
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>44</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>symAdd</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPlainTextEdit" name="plainTextEdit"/>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Command $</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>44</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

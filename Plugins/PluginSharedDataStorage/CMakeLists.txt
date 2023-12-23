@@ -46,6 +46,6 @@ endif()
 # 设置筛选器
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Plugins")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core ${ITK_LIBRARIES} ${VTK_LIBRARIES}
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core ${ITK_LIBRARIES} ${VTK_LIBRARIES} SplineDrivenImageSlicer-9.1
 MitkCore MitkQtWidgets MitkMapperExt MitkDICOM MitkAlgorithmsExt
 )

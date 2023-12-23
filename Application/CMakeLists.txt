@@ -1,3 +1,4 @@
 add_subdirectory(FillHoleApp)
 add_subdirectory(ViewerApp)
 add_subdirectory(CgalDemoApp)
+add_subdirectory(DrawApp)
