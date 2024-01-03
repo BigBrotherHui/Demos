@@ -5,6 +5,9 @@ using namespace std;
 class BasicAlgorithm
 {
 public:
+	//svd分解协方差矩阵求解最小特征值对应的列为法向量,鲁棒性不好，没有去除外点
+	static bool fit_plane(const Eigen::MatrixX3d& plane_pts, Eigen::Vector4d &);
+
 	//A为N行3列的点
 	static void fit_sphere(const MatrixXd& A, Eigen::Vector3d& center, double& radius, double& rms);
 	//n次多项式拟合，order为多项式次数，coeff为多项式系数

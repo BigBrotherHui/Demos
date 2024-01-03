@@ -230,20 +230,21 @@ Widget::Widget(QWidget *parent)
 	    std::ofstream os("PT.json",std::ios::trunc);
 	    cereal::JSONOutputArchive ar(os);
 	    ar(cereal::make_nvp("PT",a));
+        os.close();
+        os.flush();
     }
     try
     {
         std::ifstream is("PT.json");
         cereal::JSONInputArchive iarchive(is);
         iarchive(cereal::make_nvp("PT",a));
+        is.close();
         cout << a;
         qDebug() << a;
     }catch(exception &e)
     {
         qDebug() << "error:" << QString::fromStdString(e.what());
     }
-    
-
     QVBoxLayout* l = new QVBoxLayout(this);
     m_rw = new QmitkRenderWindow(this);
     m_rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);

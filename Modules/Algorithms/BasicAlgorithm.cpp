@@ -2,6 +2,23 @@
 
 static const double M_PI=3.14159265358979323846;
 
+bool BasicAlgorithm::fit_plane(const Eigen::MatrixX3d& plane_pts, Eigen::Vector4d &out)
+{
+    if(plane_pts.rows()<3)
+    {
+        std::cout << "at least input 3 points" << std::endl;
+        return false;
+    }
+    Eigen::Vector3d center = plane_pts.colwise().mean().eval();
+    Eigen::MatrixX3d tmp = plane_pts;
+    tmp.rowwise() -= center.transpose();
+
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(tmp, Eigen::ComputeThinV);
+    out.head(3) = svd.matrixV().block<3, 1>(0, 2);
+    out[3] = -(out[0] * center[0] + out[1] * center[1] + out[2] * center[2]);
+    return true;
+}
+
 void BasicAlgorithm::fit_sphere(const MatrixXd& A, Eigen::Vector3d& center, double& radius, double& rms)
 {
     MatrixXd B = A;
@@ -549,7 +566,7 @@ bool BasicAlgorithm::fit_circle_3d(std::vector<double>& inp_pointset, std::array
             local_x[2], local_y[2], local_z[2];*/
 
 
-            //calculate point position in local coordinates; P_local = Rl2g * P_global = Rg2l.transpose() * P_global
+    //calculate point position in local coordinates; P_local = Rl2g * P_global = Rg2l.transpose() * P_global
     pointSet = Rg2l.transpose().eval() * pointSet;
 
 

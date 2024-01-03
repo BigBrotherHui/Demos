@@ -82,8 +82,9 @@ void DrawTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
           new QAction("create a group with cascading collidingItems");
       QAction *showallgroups = new QAction("show all groups");
       QObject::connect(creategroup, &QAction::triggered, this, [&] {
+        QTransform t;
         GraphicsItem *selItem =
-            dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos()));
+            dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos(),t));
         if (!selItem) return;
         Group *g = new Group;
         QList<QGraphicsItem *> colItems = scene->collidingItems(selItem);
@@ -97,8 +98,9 @@ void DrawTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
         g->selectAll(1);
       });
       QObject::connect(creategroupcascading, &QAction::triggered, this, [&] {
+        QTransform t;
         GraphicsItem *selItem =
-            dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos()));
+            dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos(),t));
         if (!selItem) return;
         Group *g = new Group;
         QSet<GraphicsItem *> items;
@@ -108,8 +110,9 @@ void DrawTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
       });
 
       QObject::connect(showallgroups, &QAction::triggered, this, [&] {
+        QTransform t;
         GraphicsItem *selItem =
-            dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos()));
+            dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos(),t));
         if (!selItem) return;
         for (auto g : selItem->groups()) {
           //          qDebug() << g->objectName() << g->items().size();
