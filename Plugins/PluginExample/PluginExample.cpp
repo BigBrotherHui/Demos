@@ -15,9 +15,10 @@ PluginExample::~PluginExample()
 
 QWidget* PluginExample::createWidget()
 {
+	
 	if(!m_widget)
-		m_widget = new ProjectionWidget;
-	Eigen::MatrixX3d points;
+		m_widget = new QWidget;
+	/*Eigen::MatrixX3d points;
 	points.resize(8, 3);
 	points.row(0) << 1, 0, 0;
 	points.row(1) << 11, 0, 0;
@@ -27,6 +28,6 @@ QWidget* PluginExample::createWidget()
 	points.row(5) << 11, 0, 10;
 	points.row(6) << 1, 10, 10;
 	points.row(7) << 11, 10, 10;
-	static_cast<ProjectionWidget*>(m_widget)->drawRect(points);
+	static_cast<ProjectionWidget*>(m_widget)->drawRect(points);*/
 	return m_widget;
 }
