@@ -1,3 +1,4 @@
 add_subdirectory(Core)
 add_subdirectory(Algorithms)
 add_subdirectory(PropertyBrowser)
+add_subdirectory(DRR_GPU)

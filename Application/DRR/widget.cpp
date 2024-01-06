@@ -68,7 +68,7 @@ Widget::Widget(QWidget *parent)
     l->addWidget(m_renderwindow);
 	m_lw= new QmitkLevelWindowWidget(this);
 	m_lw->SetDataStorage(m_data_storage_);
-	m_lw->GetManager()->LevelWindowChanged.AddListener(mitk::MessageDelegate1<Widget, const mitk::LevelWindow&>(this, &Widget::levelWindowChanged));
+	//m_lw->GetManager()->LevelWindowChanged.AddListener(mitk::MessageDelegate1<Widget, const mitk::LevelWindow&>(this, &Widget::levelWindowChanged));
 	l->addWidget(m_lw);
 	l->addWidget(m_renderwindow2d);
 	l->setStretchFactor(m_renderwindow, 5);

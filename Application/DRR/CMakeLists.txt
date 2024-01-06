@@ -1,4 +1,16 @@
-PROJECT(DRR)
+cmake_minimum_required(VERSION 3.20)
+project(DRR LANGUAGES CXX CUDA)
+
+
+
+#include(CheckLanguage)
+#if(NOT CUDAToolkit_FOUND)
+#    include(FindCUDAToolkit)
+#endif()
+#include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+#check_language(CUDA)
+#set(CMAKE_CUDA_STANDARD 17)
+#set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -11,9 +23,13 @@ find_package(ITK REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(VTK REQUIRED)
 find_package(MITK 2023.04 REQUIRED)
+# glog
+find_package(Glog REQUIRED)
+include_directories(${CMAKE_SOURCE_DIR}/ThirdParty)
+include_directories(${CMAKE_SOURCE_DIR}/Modules/DRR_GPU)
 
-file(GLOB_RECURSE SOURCE_FILES "*.cpp" "*.cxx")
-file(GLOB_RECURSE HEADER_FILES "*.h" "*.hpp")
+file(GLOB_RECURSE SOURCE_FILES *.cu *.cpp *.cxx)
+file(GLOB_RECURSE HEADER_FILES *.cuh *.h *.hpp *.hxx)
 file(GLOB_RECURSE UI_FILES "*.ui")
 file(GLOB_RECURSE QRC_FILES "*.qrc")
 
@@ -21,13 +37,18 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(PROJECT_SOURCES
         ${SOURCE_FILES} ${HEADER_FILES} ${UI_FILES} ${QRC_FILES}
 )
-source_group("Header Files" REGULAR_EXPRESSION ".h$")
-source_group("Source Files" FILES ${SRC_FILES})
+source_group("Header Files" FILES ${HEADER_FILES})
+source_group("Source Files" FILES ${SOURCE_FILES})
 source_group("Forms" REGULAR_EXPRESSION ".ui$")
 source_group("Generated Files" REGULAR_EXPRESSION "ui_.*\\.h$|moc.*\\.cpp$|\\.stamp$|\\.rule$")
 
+
 ADD_EXECUTABLE(${PROJECT_NAME} ${PROJECT_SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Application")
+#set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES native)
+
+#cuda_add_executable(${PROJECT_NAME} kernel.cu)
+#target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Applications")
 #设置输出目录（属性-》常规-》输出目录）（不需要改动）
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>
@@ -43,8 +64,11 @@ else()
     # 其他系统的操作
     # ...
 endif()
+add_dependencies(${PROJECT_NAME} siddon_gpu)
+
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Widgets Qt5::Core ${ITK_LIBRARIES} ${VTK_LIBRARIES}
 MitkCore MitkQtWidgets MitkMapperExt MitkDICOM)
-
+target_link_libraries(${PROJECT_NAME} ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>/siddon_gpu.lib)
+target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/ThirdParty/glog/lib/glog.lib)
 
 
