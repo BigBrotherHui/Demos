@@ -1,4 +1,4 @@
-#include "graphicsitemgroup.h"
+﻿#include "graphicsitemgroup.h"
 #include <QDebug>
 #include <QStyleOptionGraphicsItem>
 #include "util.h"
@@ -64,7 +64,7 @@ QGraphicsItem *GraphicsItemGroup::duplicate() const {
   item->setTransformOriginPoint(transformOriginPoint());
   item->setRotation(rotation());
   item->setScale(scale());
-  item->setZValue(zValue() + 0.1);
+  item->setZValue(zValue());
   item->updateCoordinate();
   item->m_width = m_width;
   item->m_height = m_height;

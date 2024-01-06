@@ -1,9 +1,10 @@
-#include "graphicsrectitem.h"
+﻿#include "graphicsrectitem.h"
 #include <QDebug>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include "drawscene.h"
 #include "util.h"
+#include "globalsignalinstance.h"
 GraphicsRectItem::GraphicsRectItem(const QRect &rect, bool isRound,
                                    QGraphicsItem *parent)
     : GraphicsItem(parent),
@@ -18,6 +19,7 @@ GraphicsRectItem::GraphicsRectItem(const QRect &rect, bool isRound,
   m_localRect = rect;
   m_originPoint = QPointF(0, 0);
   updatehandles();
+  connect(this,&GraphicsRectItem::refreshItem,GlobalSignalInstance::instance(),&GlobalSignalInstance::signal_wrapper_refreshItem);
 }
 
 QRectF GraphicsRectItem::boundingRect() const { return m_localRect; }
@@ -117,25 +119,25 @@ void GraphicsRectItem::updateCoordinate() {
   delta = delta.toPoint() / DrawScene::m_mingridsize.height() *
           DrawScene::m_mingridsize.height();
   if (!parentItem()) {
-    prepareGeometryChange();
-    int x = -m_width / 2;
-    int y = -m_height / 2;
-    x = x / DrawScene::m_mingridsize.width() * DrawScene::m_mingridsize.width();
-    y = y / DrawScene::m_mingridsize.height() *
-        DrawScene::m_mingridsize.height();
-    m_width = m_width / DrawScene::m_mingridsize.width() *
+//    prepareGeometryChange();
+//    int x = -m_width / 2;
+//    int y = -m_height / 2;
+//    x = x / DrawScene::m_mingridsize.width() * DrawScene::m_mingridsize.width();
+//    y = y / DrawScene::m_mingridsize.height() *DrawScene::m_mingridsize.height();
+    m_width = qRound(m_width) / DrawScene::m_mingridsize.width() *
               DrawScene::m_mingridsize.width();
-    m_height = m_height / DrawScene::m_mingridsize.height() *
+    m_height = qRound(m_height) / DrawScene::m_mingridsize.height() *
                DrawScene::m_mingridsize.height();
-    m_localRect = QRect(x, y, m_width, m_height);
-    // TODO:这个地方如果新添加polygon或polyline会导致第一个矩形反向绘制
-    // TODO:刻度尺y轴值需要取反
-    setTransform(transform().translate(delta.x(), delta.y()));
-    setTransformOriginPoint(m_localRect.center());
-    moveBy(-delta.x(), -delta.y());
-    setTransform(transform().translate(-delta.x(), -delta.y()));
-    opposite_ = QPointF(0, 0);
+//    m_localRect = QRect(x, y, m_width, m_height);
+//    // TODO:这个地方如果新添加polygon或polyline会导致第一个矩形反向绘制
+//    // TODO:刻度尺y轴值需要取反
+//    setTransform(transform().translate(delta.x(), delta.y()));
+//    setTransformOriginPoint(m_localRect.center());
+//    moveBy(-delta.x(), -delta.y());
+//    setTransform(transform().translate(-delta.x(), -delta.y()));
+//    opposite_ = QPointF(0, 0);
     updatehandles();
+    emit refreshItem(this);
   }
   m_initialRect = m_localRect;
 }
@@ -146,6 +148,7 @@ void GraphicsRectItem::move(const QPointF &point) {
 
 QGraphicsItem *GraphicsRectItem::duplicate() const {
   GraphicsRectItem *item = new GraphicsRectItem(rect().toRect(), m_isRound);
+  item->createHandles();
   item->m_width = width();
   item->m_height = height();
   item->setPos(pos().x(), pos().y());
@@ -155,7 +158,7 @@ QGraphicsItem *GraphicsRectItem::duplicate() const {
   item->setTransformOriginPoint(transformOriginPoint());
   item->setRotation(rotation());
   item->setScale(scale());
-  item->setZValue(zValue() + 0.1);
+  item->setZValue(zValue());
   item->m_fRatioY = m_fRatioY;
   item->m_fRatioX = m_fRatioX;
   item->updateCoordinate();

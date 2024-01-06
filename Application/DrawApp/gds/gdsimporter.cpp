@@ -1,7 +1,11 @@
-#include "gdsimporter.h"
+﻿#include "gdsimporter.h"
 #include <fstream>
 #include <sstream>
 #include "graphicsrectitem.h"
+#include "drawscene.h"
+#include "gdsCpp.hpp"
+#include "graphicsbezier.h"
+#include <QDebug>
 gdsimporter::gdsimporter() {}
 
 gdsimporter *gdsimporter::instance() {
@@ -19,7 +23,7 @@ QRect createQRect(const std::vector<int> &points) {
 
   return QRect();
 }
-void gdsimporter::parseFile(QString path, std::vector<QGraphicsItem *> &items) {
+void gdsimporter::parseFile(QString path, std::vector<GraphicsItem *> &items) {
   std::ifstream file(path.toStdString());
   std::string line;
   std::vector<int> points;
@@ -42,4 +46,65 @@ void gdsimporter::parseFile(QString path, std::vector<QGraphicsItem *> &items) {
     }
   }
   file.close();
+}
+
+void gdsimporter::writeFile(QString path, const std::vector<GraphicsItem *> &items)
+{
+    gdscpp writer;
+    gdsSTR str;
+    for(int i=0;i<items.size();++i)
+    {
+        GraphicsItem *item=items[i];
+        switch( item->itemtype())
+        {
+        case rectangle:
+        {
+            GraphicsRectItem *rectitem=static_cast<GraphicsRectItem *>(item);
+            str.name="box";
+            str.BOUNDARY.push_back(draw2ptBox(rectitem->zValue(),rectitem->pos().x(),rectitem->pos().y(),rectitem->pos().x()+rectitem->width(),
+                                              rectitem->pos().y()+rectitem->height()));
+            break;
+        }
+        case polygon: {
+            GraphicsPolygonItem *polygonitem=static_cast<GraphicsPolygonItem *>(item);
+            str.name="polygon";
+            std::vector<int> x,y;
+            std::vector<QPointF> pts=polygonitem->points().toStdVector();
+            for(int k=0;k<pts.size();++k)
+            {
+                x[i]=pts[i].x();
+                y[i]=pts[i].y();
+            }
+            str.BOUNDARY.push_back(drawBoundary(polygonitem->zValue(),x,y));
+            break;
+        }
+        case polyline: {
+            GraphicsBezier *pathitem=static_cast<GraphicsBezier *>(item);
+            str.name="polyline";
+            std::vector<int> x,y;
+            std::vector<QPointF> pts=pathitem->points().toStdVector();
+            for(int k=0;k<pts.size();++k)
+            {
+                x[i]=pts[i].x();
+                y[i]=pts[i].y();
+            }
+            str.BOUNDARY.push_back(drawBoundary(pathitem->zValue(),x,y));
+            break;
+        }
+        case text:
+        {
+
+            break;
+        }
+        case DrawShape::instance:
+        {
+
+            break;
+        }
+        default:
+        break;
+        }
+    }
+    writer.setSTR(str);
+    writer.write(path.toStdString());
 }

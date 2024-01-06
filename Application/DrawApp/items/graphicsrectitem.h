@@ -1,7 +1,8 @@
-#ifndef GRAPHICSRECTITEM_H
+﻿#ifndef GRAPHICSRECTITEM_H
 #define GRAPHICSRECTITEM_H
 #include "graphicsitem.h"
 class GraphicsRectItem : public GraphicsItem {
+    Q_OBJECT
  public:
   GraphicsRectItem(const QRect &rect, bool isRound = false,
                    QGraphicsItem *parent = 0);
@@ -17,7 +18,8 @@ class GraphicsRectItem : public GraphicsItem {
 
   virtual bool loadFromXml(QXmlStreamReader *xml);
   virtual bool saveToXml(QXmlStreamWriter *xml);
-
+signals:
+  void refreshItem(GraphicsItem *);
  protected:
   void updatehandles();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,

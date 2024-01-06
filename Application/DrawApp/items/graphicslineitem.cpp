@@ -1,4 +1,4 @@
-#include "graphicslineitem.h"
+﻿#include "graphicslineitem.h"
 #include "drawscene.h"
 #include "util.h"
 GraphicsLineItem::GraphicsLineItem(QGraphicsItem *parent)
@@ -23,6 +23,7 @@ QPainterPath GraphicsLineItem::shape() const {
 
 QGraphicsItem *GraphicsLineItem::duplicate() const {
   GraphicsLineItem *item = new GraphicsLineItem();
+  item->createHandles();
   item->m_width = width();
   item->m_height = height();
   item->m_points = m_points;
@@ -34,7 +35,7 @@ QGraphicsItem *GraphicsLineItem::duplicate() const {
   item->setTransformOriginPoint(transformOriginPoint());
   item->setRotation(rotation());
   item->setScale(scale());
-  item->setZValue(zValue() + 0.1);
+  item->setZValue(zValue());
   item->updateCoordinate();
   return item;
 }

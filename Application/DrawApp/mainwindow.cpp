@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+﻿#include "mainwindow.h"
 #include <QDockWidget>
 #include <QGraphicsItem>
 #include <QMdiSubWindow>
@@ -9,12 +9,15 @@
 #include "customproperty.h"
 #include "drawobj.h"
 #include "gdsimporter.h"
+#include "globalsignalinstance.h"
+#include "graphicsinstanceitem.h"
 #include "group.h"
 #include "layer.h"
 #include "layermanager.h"
 #include "mapview.h"
 #include "qttreepropertybrowser.h"
 #include "qtvariantproperty.h"
+DrawView *MainWindow::currentView=nullptr;
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   undoStack = new QUndoStack(this);
   undoView = new QUndoView(undoStack);
@@ -33,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setCentralWidget(mdiArea);
 
-  setWindowTitle(tr("Qt Drawing"));
+  setWindowTitle(tr("EDA DrawBoard"));
   setUnifiedTitleAndToolBarOnMac(true);
 
   connect(mdiArea, SIGNAL(subWindowActivated(QMdiSubWindow *)), this,
@@ -62,6 +65,72 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   connect(&m_timer, SIGNAL(timeout()), this, SLOT(updateActions()));
   m_timer.start(500);
   theControlledObject = NULL;
+  connect(GlobalSignalInstance::instance(),
+          &GlobalSignalInstance::signal_wrapper_instanceItemDoubleClicked, this,
+          [&](GraphicsInstanceItem *item) {
+            if (!item) return;
+//            if (viewmap.find(item->objectName()) != viewmap.end())
+//            {
+            if(item->view)
+            {
+//                auto list=mdiArea->subWindowList();
+//                for(auto l:list)
+//                {
+//                    if(l->objectName()==item->objectName())
+//                    {
+//                        viewmap[item->objectName()]->show();
+//                    if(l==item->view)
+//                    {
+//                        l->show();
+                item->view->show();
+                currentView=item->view;
+//                item->view->layerManager->SetLayerWidget(layerWidget);
+                docklayer->setWidget(item->view->layerManager->layerwidget);
+                mapViewDock->setWidget(item->view->mapView);
+                item->view->layerManager->SetItemWidget(itemWidget);
+//                        break;
+//                    }
+//                }
+            }
+            else
+            {
+               DrawView *view= createMdiChild(item->objectName());
+               currentView=view;
+               mapViewDock->setWidget(view->mapView);
+//               viewmap[item->objectName()]=view;
+               item->view=view;
+//                item->view->layerManager->SetLayerWidget(layerWidget);
+//                item->view->layerManager->SetItemWidget(itemWidget);
+               connect(view,&DrawView::updateScene,this,[=](QPixmap pix)
+               {
+                   mdiArea->activateNextSubWindow();
+                   if(mdiArea->activeSubWindow())
+                       mdiArea->activeSubWindow()->showMaximized();
+                    DrawView *v=dynamic_cast<DrawView *>(mdiArea->activeSubWindow()->widget());
+                    if(v)
+                    {
+                        currentView=v;
+                        mapViewDock->setWidget(currentView->mapView);
+                        //加上会导致instance关闭后，当前界面拖动item乱跑
+//                        currentView->layerManager->SetLayerWidget(layerWidget);
+                        docklayer->setWidget(currentView->layerManager->layerwidget);
+                        currentView->layerManager->SetItemWidget(itemWidget);
+                    }
+                   item->setPixmap(pix);
+//                   qDebug()<<mdiArea->activeSubWindow()->widget()->metaObject()->className();
+//                   mapViewDock->setWidget();
+               });
+               view->setToSubView();
+            }
+            mdiArea->tileSubWindows();
+          });
+    connect(GlobalSignalInstance::instance(),&GlobalSignalInstance::signal_wrapper_refreshItem,this,[&](GraphicsItem *item)
+    {
+        theControlledObject = dynamic_cast<QObject *>(item);
+        propertyEditor->setObject(nullptr);
+        propertyEditor->setObject(theControlledObject);
+    });
+    setStyleSheet("QMainWindow{background-color:pink;}");
 }
 
 MainWindow::~MainWindow() {}
@@ -245,6 +314,9 @@ void MainWindow::createActions() {
   polylineAct->setCheckable(true);
   textAct = new QAction(QIcon(":/icons/text.png"), tr("text tool"), this);
   textAct->setCheckable(true);
+  instanceAct =
+      new QAction(QIcon(":/icons/instance.png"), "instance tool", this);
+  instanceAct->setCheckable(1);
   //  bezierAct = new QAction(QIcon(":/icons/bezier.png"), tr("bezier tool"),
   //  this); bezierAct->setCheckable(true);
 
@@ -261,6 +333,7 @@ void MainWindow::createActions() {
   drawActionGroup->addAction(polygonAct);
   drawActionGroup->addAction(polylineAct);
   drawActionGroup->addAction(textAct);
+  drawActionGroup->addAction(instanceAct);
   //  drawActionGroup->addAction(bezierAct);
   //  drawActionGroup->addAction(rotateAct);
   selectAct->setChecked(true);
@@ -274,6 +347,7 @@ void MainWindow::createActions() {
   connect(polygonAct, SIGNAL(triggered()), this, SLOT(addShape()));
   connect(polylineAct, SIGNAL(triggered()), this, SLOT(addShape()));
   connect(textAct, SIGNAL(triggered()), this, SLOT(addShape()));
+  connect(instanceAct, SIGNAL(triggered()), this, SLOT(addShape()));
   //  connect(bezierAct, SIGNAL(triggered()), this, SLOT(addShape()));
   //  connect(rotateAct, SIGNAL(triggered()), this, SLOT(addShape()));
 
@@ -355,6 +429,7 @@ void MainWindow::createMenus() {
   shapeTool->addAction(polygonAct);
   shapeTool->addAction(polylineAct);
   shapeTool->addAction(textAct);
+  shapeTool->addAction(instanceAct);
   //  shapeTool->addAction(bezierAct);
   //  shapeTool->addAction(rotateAct);
   toolMenu->addMenu(shapeTool);
@@ -399,7 +474,7 @@ void MainWindow::createToolbars() {
   editToolBar->addAction(zoomOutAct);
 
   // create draw toolbar
-  drawToolBar = addToolBar(tr("drawing"));
+  drawToolBar = addToolBar(tr("EDA drawing"));
   drawToolBar->setIconSize(QSize(24, 24));
   drawToolBar->addAction(selectAct);
   drawToolBar->addAction(dragAct);
@@ -410,6 +485,7 @@ void MainWindow::createToolbars() {
   drawToolBar->addAction(polygonAct);
   drawToolBar->addAction(polylineAct);
   drawToolBar->addAction(textAct);
+  drawToolBar->addAction(instanceAct);
   //  drawToolBar->addAction(bezierAct);
   //  drawToolBar->addAction(rotateAct);
 
@@ -498,12 +574,14 @@ void MainWindow::updateWindowMenu() {
 
 void MainWindow::newFile() {
   DrawView *child = createMdiChild();
+  currentView=child;
   child->newFile();
   child->show();
 }
 
 void MainWindow::open() {
-  QString fileName = QFileDialog::getOpenFileName(this);
+  QString fileName =
+      QFileDialog::getOpenFileName(this, "选择gds文件", ".", "*.gds");
   if (!fileName.isEmpty()) {
     QMdiSubWindow *existing = findMdiChild(fileName);
     if (existing) {
@@ -517,6 +595,7 @@ void MainWindow::open() {
 
 bool MainWindow::openFile(const QString &fileName) {
   DrawView *child = createMdiChild();
+  currentView=child;
   const bool succeeded = child->loadFile(fileName);
   if (succeeded)
     child->show();
@@ -540,15 +619,15 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 }
 
 void MainWindow::createLayerWidgets() {
-  QDockWidget *docklayer = new QDockWidget(this);
-  layerWidget = new QTreeWidget(this);
-  layerWidget->setStyleSheet("color:black;");
-  layerWidget->setColumnCount(1);
-  layerWidget->setSelectionBehavior(QTreeWidget::SelectRows);
-  layerWidget->setSelectionMode(QTreeWidget::SingleSelection);
-  layerWidget->setEditTriggers(QTreeWidget::NoEditTriggers);
-  layerWidget->setHeaderLabel("layer");
-  docklayer->setWidget(layerWidget);
+  docklayer = new QDockWidget(this);
+//  layerWidget = new QTreeWidget(this);
+//  layerWidget->setStyleSheet("color:black;");
+//  layerWidget->setColumnCount(1);
+//  layerWidget->setSelectionBehavior(QTreeWidget::SelectRows);
+//  layerWidget->setSelectionMode(QTreeWidget::SingleSelection);
+//  layerWidget->setEditTriggers(QTreeWidget::NoEditTriggers);
+//  layerWidget->setHeaderLabel("layer");
+//  docklayer->setWidget(layerWidget);
   addDockWidget(Qt::RightDockWidgetArea, docklayer);
   QDockWidget *dockitem = new QDockWidget(this);
   itemWidget = new QListWidget(this);
@@ -568,19 +647,14 @@ void MainWindow::createCommandWidget() {
   addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
-DrawView *MainWindow::createMdiChild() {
+DrawView *MainWindow::createMdiChild(QString str) {
   DrawScene *scene = new DrawScene(this);
-  LayerManager::GetInstance()->SetLayerWidget(layerWidget);
-  LayerManager::GetInstance()->SetItemWidget(itemWidget);
-  LayerManager::GetInstance()->AddLayer(scene);
   QRectF rc = QRectF(0, 0, 30000, 30000);
 
   scene->setSceneRect(rc);
   //  qDebug() << rc.bottomLeft() << rc.size() << rc.topLeft();
 
   connect(scene, SIGNAL(selectionChanged()), this, SLOT(itemSelected()));
-  connect(LayerManager::GetInstance(), &LayerManager::layerChanged, this,
-          &MainWindow::layerChanged);
   connect(scene, SIGNAL(itemAdded(QGraphicsItem *)), this,
           SLOT(itemAdded(QGraphicsItem *)));
   connect(scene, SIGNAL(itemMoved(QGraphicsItem *, QPointF)), this,
@@ -597,6 +671,14 @@ DrawView *MainWindow::createMdiChild() {
           this, SLOT(itemControl(QGraphicsItem *, int, QPointF, QPointF)));
 
   DrawView *view = new DrawView(scene);
+//  view->layerManager->SetLayerWidget(layerWidget);
+  docklayer->setWidget(view->layerManager->layerwidget);
+  view->layerManager->refreshLayerWidget();
+  view->layerManager->SetItemWidget(itemWidget);
+  view->layerManager->AddLayer();
+     connect(view->layerManager, &LayerManager::layerChanged, this,
+          &MainWindow::layerChanged,static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
+  if (!str.isEmpty()) view->setWindowTitle(str);
   scene->setView(view);
   connect(view, SIGNAL(positionChanged(int, int)), this,
           SLOT(positionChanged(int, int)));
@@ -613,20 +695,12 @@ DrawView *MainWindow::createMdiChild() {
       "QMdiSubWindow::title:hover {"
       "   background-color: #d9d9d9;"
       "}";
-  mdiArea->addSubWindow(view)->setStyleSheet(subWindowStyleSheet);
+  auto window=mdiArea->addSubWindow(view);
+  window->setObjectName(str);
+  window->setStyleSheet(subWindowStyleSheet);
+  window->setAttribute(Qt::WA_DeleteOnClose, false);
   view->showMaximized();
-  MapView *mapView = new MapView(view, this);
-  mapViewDock->setWidget(mapView);
-  connect(scene, &DrawScene::itemAdded, mapView, &MapView::updateImage);
-  connect(scene, &DrawScene::itemRemoved, mapView, &MapView::updateImage);
-  connect(scene, &DrawScene::itemResize, mapView, &MapView::updateImage);
-  connect(scene, &DrawScene::itemMoved, mapView, &MapView::updateImage);
-  connect(view, &DrawView::sizeChanged, mapView, &MapView::updateImage);
-
-  connect(scene, &DrawScene::itemAdded, LayerManager::GetInstance(),
-          &LayerManager::refreshItemWidget);
-  connect(scene, &DrawScene::itemRemoved, LayerManager::GetInstance(),
-          &LayerManager::refreshItemWidget);
+  mapViewDock->setWidget(view->mapView);
   return view;
 }
 
@@ -660,6 +734,8 @@ void MainWindow::addShape() {
     DrawTool::c_drawShape = polyline;
   else if (sender() == textAct)
     DrawTool::c_drawShape = text;
+  else if (sender() == instanceAct)
+    DrawTool::c_drawShape = instance;
   if (sender() != selectAct /*&& sender() != rotateAct*/) {
     activeMdiChild()->scene()->clearSelection();
   }
@@ -680,6 +756,7 @@ void MainWindow::updateActions() {
   polygonAct->setEnabled(scene);
   polylineAct->setEnabled(scene);
   textAct->setEnabled(scene);
+  instanceAct->setEnabled(scene);
 
   zoomInAct->setEnabled(scene);
   zoomOutAct->setEnabled(scene);
@@ -695,6 +772,7 @@ void MainWindow::updateActions() {
   polygonAct->setChecked(DrawTool::c_drawShape == polygon);
   polylineAct->setChecked(DrawTool::c_drawShape == polyline);
   textAct->setChecked(DrawTool::c_drawShape == text);
+  instanceAct->setChecked(DrawTool::c_drawShape == instance);
   undoAct->setEnabled(undoStack->canUndo());
   redoAct->setEnabled(undoStack->canRedo());
 
@@ -731,7 +809,6 @@ void MainWindow::itemSelected() {
   if (scene->selectedItems().count() > 0 &&
       scene->selectedItems().first()->isSelected()) {
     QGraphicsItem *item = scene->selectedItems().first();
-
     theControlledObject = dynamic_cast<QObject *>(item);
     propertyEditor->setObject(theControlledObject);
   }
@@ -798,18 +875,21 @@ void MainWindow::groupChanged(Group *g) {
 }
 
 void MainWindow::addLayer() {
-  LayerManager::GetInstance()->AddLayer(
-      dynamic_cast<DrawScene *>(activeMdiChild()->scene()));
+    if(!currentView)
+        return;
+    currentView->layerManager->AddLayer();
 }
 
 void MainWindow::removeLayer() {
-  LayerManager::GetInstance()->RemoveLayer(
-      LayerManager::GetInstance()->GetCurrentLayer());
+    if(!currentView)
+        return;
+    currentView->layerManager->RemoveLayer(
+                currentView->layerManager->GetCurrentLayer());
 }
 
 void MainWindow::layerChanged() {
-  if (!activeMdiChild()) return;
-  auto l = LayerManager::GetInstance()->GetCurrentLayer();
+  if (!activeMdiChild() || !currentView) return;
+  auto l = currentView->layerManager->GetCurrentLayer();
   if (l) {
     theControlledObject = dynamic_cast<QObject *>(l);
     propertyEditor->setObject(theControlledObject);
@@ -829,7 +909,7 @@ void MainWindow::deleteItem() {
   if (scene->selectedItems().isEmpty()) return;
   for (int i = 0; i < items.size(); i++) {
     auto ii = dynamic_cast<GraphicsItem *>(items[i]);
-    if (ii) LayerManager::GetInstance()->GetCurrentLayer()->RemoveItem(ii);
+    if (ii && currentView) currentView->layerManager->GetCurrentLayer()->RemoveItem(ii);
   }
   QUndoCommand *deleteCommand = new RemoveShapeCommand(scene);
   undoStack->push(deleteCommand);
@@ -981,6 +1061,8 @@ void MainWindow::on_paste() {
     foreach (QGraphicsItem *item, data->items()) {
       AbstractShape *sp = qgraphicsitem_cast<AbstractShape *>(item);
       QGraphicsItem *copy = sp->duplicate();
+      if(currentView)
+          currentView->layerManager->AddItem(dynamic_cast<GraphicsItem *>(copy));
       if (copy) {
         copy->setSelected(true);
         copy->moveBy(10, 10);
@@ -1025,7 +1107,9 @@ void MainWindow::setActiveSubWindow(QWidget *window) {
 void MainWindow::about() {}
 
 void MainWindow::itemClicked(QString s) {
-  auto l = LayerManager::GetInstance()->GetCurrentLayer();
+    if(!currentView)
+        return;
+  auto l = currentView->layerManager->GetCurrentLayer();
   if (l) {
     GraphicsItem *item = l->selectItemByObjectName(s);
     if (item) theControlledObject = dynamic_cast<QObject *>(item);

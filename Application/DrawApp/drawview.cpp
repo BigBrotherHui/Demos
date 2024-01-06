@@ -1,4 +1,5 @@
-#include "drawview.h"
+﻿#include "drawview.h"
+#include <QProcess>
 #include <QSvgGenerator>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
@@ -12,7 +13,11 @@
 #include "layer.h"
 #include "layermanager.h"
 #include "ruler.h"
-DrawView::DrawView(QGraphicsScene *scene) : QGraphicsView(scene) {
+#include "mainwindow.h"
+#include "mapview.h"
+#include "gdsimporter.h"
+DrawView::DrawView(QGraphicsScene *pscene) : QGraphicsView(pscene) {
+    layerManager=new LayerManager(dynamic_cast<DrawScene *>(pscene),this);
   m_hruler = new QtRuleBar(Qt::Horizontal, this, this);
   m_vruler = new QtRuleBar(Qt::Vertical, this, this);
   box = new QtCornerBox(this);
@@ -24,7 +29,7 @@ DrawView::DrawView(QGraphicsScene *scene) : QGraphicsView(scene) {
   setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   setViewport(new QWidget);
 
-  setAttribute(Qt::WA_DeleteOnClose);
+//  setAttribute(Qt::WA_DeleteOnClose);
   isUntitled = true;
 
   modified = false;
@@ -48,6 +53,18 @@ DrawView::DrawView(QGraphicsScene *scene) : QGraphicsView(scene) {
     setMatrix(matrix);
     updateRuler();
   });
+
+  mapView= new MapView(this, this);
+  connect(static_cast<DrawScene *>(scene()), &DrawScene::itemAdded, mapView, &MapView::updateImage);
+  connect(static_cast<DrawScene *>(scene()), &DrawScene::itemRemoved, mapView, &MapView::updateImage);
+  connect(static_cast<DrawScene *>(scene()), &DrawScene::itemResize, mapView, &MapView::updateImage);
+  connect(static_cast<DrawScene *>(scene()), &DrawScene::itemMoved, mapView, &MapView::updateImage);
+  connect(this, &DrawView::sizeChanged, mapView, &MapView::updateImage);
+}
+
+DrawView::~DrawView()
+{
+    qDebug()<<"~DrawView";
 }
 
 void DrawView::zoomIn() { ruler->updateValue(6); }
@@ -58,7 +75,7 @@ void DrawView::newFile() {
   static int sequenceNumber = 1;
 
   isUntitled = true;
-  curFile = tr("drawing%1.xml").arg(sequenceNumber++);
+  curFile = tr("drawboard%1.gds").arg(sequenceNumber++);
   setWindowTitle(curFile + "[*]");
 }
 
@@ -66,32 +83,33 @@ bool DrawView::loadFile(const QString &fileName) {
   QFile file(fileName);
   if (!file.open(QFile::ReadOnly | QFile::Text)) {
     QMessageBox::warning(
-        this, tr("Qt Drawing"),
+        this, tr("EDA DrawBoard"),
         tr("Cannot read file %1:\n%2.").arg(fileName).arg(file.errorString()));
     return false;
   }
-  scene()->setSceneRect(0, 0, 3200, 3200);
-  //  QXmlStreamReader xml(&file);
-  //  if (xml.readNextStartElement()) {
-  //    if (xml.name() == tr("canvas")) {
-  //      int width = xml.attributes().value(tr("width")).toInt();
-  //      int height = xml.attributes().value(tr("height")).toInt();
-  //  scene()->setSceneRect(0, 0, width, height);
-  //  loadCanvas(&xml);
-  //}
-  //}
-  loadCanvas(fileName);
+  scene()->setSceneRect(0, 0, 30000, 30000);
+  QProcess process;
+  QStringList arguments;
+  arguments << "-i" << fileName;
+  process.setProgram("gdscpp.exe");
+  process.setArguments(arguments);
+  process.setStandardOutputFile("output.txt");
+
+  process.start();
+  process.waitForFinished();
+  loadCanvas("output.txt");
   setCurrentFile(fileName);
-  //  qDebug() << xml.errorString();
-  return /*!xml.error()*/ 1;
+  QFile::remove("output.txt");
+  return 1;
 }
 
-bool DrawView::save() {
-  if (isUntitled) {
-    return saveAs();
-  } else {
-    return saveFile(curFile);
-  }
+bool DrawView::save()
+{
+    if (isUntitled) {
+        return saveAs();
+    } else {
+        return saveFile(curFile);
+    }
 }
 
 bool DrawView::saveAs() {
@@ -109,27 +127,39 @@ bool DrawView::saveFile(const QString &fileName) {
         tr("Cannot write file %1:\n%2.").arg(fileName).arg(file.errorString()));
     return false;
   }
-
-  QXmlStreamWriter xml(&file);
-  xml.setAutoFormatting(true);
-  xml.writeStartDocument();
-  xml.writeDTD("<!DOCTYPE DrawApp>");
-  xml.writeStartElement("canvas");
-  xml.writeAttribute("width", QString("%1").arg(scene()->width()));
-  xml.writeAttribute("height", QString("%1").arg(scene()->height()));
-  foreach (QGraphicsItem *item, scene()->items()) {
-    AbstractShape *ab = qgraphicsitem_cast<AbstractShape *>(item);
-    QGraphicsItemGroup *g =
-        dynamic_cast<QGraphicsItemGroup *>(item->parentItem());
-    if (ab && !qgraphicsitem_cast<SizeHandleRect *>(ab) && !g) {
-      ab->saveToXml(&xml);
-    }
+  std::vector<GraphicsItem *> items;
+  auto layers=layerManager->GetAllLayers();
+  for(int i=0;i<layers.size();i++)
+  {
+      auto its=layers[i]->GetAllItems();
+      for(int k=0;k<its.size();k++)
+          items.push_back(its[k]);
   }
-  for (Layer *l : LayerManager::GetInstance()->GetAllLayers()) {
-    l->saveToXml(&xml);
-  }
-  xml.writeEndElement();
-  xml.writeEndDocument();
+  gdsimporter::instance()->writeFile(fileName,items);
+//  QXmlStreamWriter xml(&file);
+//  xml.setAutoFormatting(true);
+//  xml.writeStartDocument();
+//  xml.writeDTD("<!DOCTYPE DrawApp>");
+//  xml.writeStartElement("canvas");
+//  xml.writeAttribute("width", QString("%1").arg(scene()->width()));
+//  xml.writeAttribute("height", QString("%1").arg(scene()->height()));
+//  foreach (QGraphicsItem *item, scene()->items()) {
+//    AbstractShape *ab = qgraphicsitem_cast<AbstractShape *>(item);
+//    QGraphicsItemGroup *g =
+//        dynamic_cast<QGraphicsItemGroup *>(item->parentItem());
+//    if (ab && !qgraphicsitem_cast<SizeHandleRect *>(ab) && !g) {
+//      ab->saveToXml(&xml);
+//    }
+//  }
+//  if(MainWindow::currentView)
+//  {
+//      auto alllayers=MainWindow::currentView->layerManager->GetAllLayers();
+//      for (Layer *l : alllayers) {
+//          l->saveToXml(&xml);
+//      }
+//  }
+//  xml.writeEndElement();
+//  xml.writeEndDocument();
 #if 0
     QSvgGenerator generator;
     generator.setFileName(fileName);
@@ -155,12 +185,25 @@ bool DrawView::saveFile(const QString &fileName) {
 
 QString DrawView::userFriendlyCurrentFile() { return strippedName(curFile); }
 
+void DrawView::show()
+{
+    m_isSaved=0;
+    return QGraphicsView::show();
+}
+
 void DrawView::closeEvent(QCloseEvent *event) {
-  if (maybeSave()) {
-    event->accept();
-  } else {
-    event->ignore();
+  if (!m_isSaved) {
+      if(maybeSave())
+      {
+          event->accept();
+      }
+      else {
+          event->ignore();
+      }
+      m_isSaved=1;
   }
+  else
+      event->accept();
 }
 
 void DrawView::wheelEvent(QWheelEvent *event) {
@@ -244,7 +287,14 @@ bool DrawView::maybeSave() {
             .arg(userFriendlyCurrentFile()),
         QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
     if (ret == QMessageBox::Save)
-      return save();
+    {
+        emit updateScene(grab());
+        if(m_isSubView)
+        {
+            return 1;
+        }
+        return save();
+    }
     else if (ret == QMessageBox::Cancel)
       return false;
   }
@@ -266,12 +316,13 @@ QString DrawView::strippedName(const QString &fullFileName) {
 void DrawView::loadCanvas(QXmlStreamReader *xml) {
   Q_ASSERT(xml->isStartElement() && xml->name() == "canvas");
   std::vector<GraphicsItem *> items;
+  if(!MainWindow::currentView)
+      return;
   while (xml->readNextStartElement()) {
     if (xml->name() == tr("layer")) {
-      Layer *l = LayerManager::GetInstance()->loadFromXml(
+      Layer *l = MainWindow::currentView->layerManager->loadFromXml(
           xml, dynamic_cast<DrawScene *>(scene()));
-      LayerManager::GetInstance()->AddLayer(l,
-                                            dynamic_cast<DrawScene *>(scene()));
+      MainWindow::currentView->layerManager->AddLayer(l);
     }
     GraphicsItem *item = NULL;
     if (xml->name() == tr("rect")) {
@@ -294,6 +345,7 @@ void DrawView::loadCanvas(QXmlStreamReader *xml) {
     //      item = qgraphicsitem_cast<AbstractShape *>(loadGroupFromXML(xml));
     //    else
     //      xml->skipCurrentElement();
+    item->createHandles();
     if (item && item->loadFromXml(xml)) {
       items.push_back(item);
     } else if (item)
@@ -301,14 +353,14 @@ void DrawView::loadCanvas(QXmlStreamReader *xml) {
   }
   for (int i = 0; i < items.size(); i++) {
     auto item = items[i];
-    LayerManager::GetInstance()->AddToSpecifiedLayer(item->zValue(), item);
+    MainWindow::currentView->layerManager->AddToSpecifiedLayer(item->zValue(), item);
     scene()->addItem(item);
   }
 }
 
 void DrawView::loadCanvas(QString gdsfilepath) {
   //  LayerManager::GetInstance()->AddLayer(dynamic_cast<DrawScene *>(scene()));
-  std::vector<QGraphicsItem *> items;
+  std::vector<GraphicsItem *> items;
   QFuture<void> f = QtConcurrent::run(
       [&] { gdsimporter::instance()->parseFile(gdsfilepath, items); });
   QFutureWatcher<void> w;

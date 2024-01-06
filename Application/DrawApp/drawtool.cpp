@@ -1,4 +1,4 @@
-#include "drawtool.h"
+﻿#include "drawtool.h"
 #include <QDebug>
 #include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
@@ -9,6 +9,7 @@
 #include <QtMath>
 #include <cmath>
 #include "drawobj.h"
+#include "globalsignalinstance.h"
 #include "graphicsbezier.h"
 #include "graphicslineitem.h"
 #include "graphicstextitem.h"
@@ -16,6 +17,7 @@
 #include "layer.h"
 #include "layermanager.h"
 #include "objectcontroller.h"
+#include "mainwindow.h"
 #define PI 3.1416
 
 QList<DrawTool *> DrawTool::c_tools;
@@ -30,12 +32,12 @@ static RectTool rectTool(rectangle);
 static RectTool roundRectTool(roundrect);
 static RectTool ellipseTool(ellipse);
 static RectTool textTool(text);
+static RectTool instanceTool(instance);
 static PolygonTool lineTool(line);
 static PolygonTool polygonTool(polygon);
 static PolygonTool bezierTool(bezier);
 static PolygonTool polylineTool(polyline);
 static RotationTool rotationTool;
-
 enum SelectMode {
   none,
   netSelect,
@@ -62,8 +64,10 @@ DrawTool::DrawTool(DrawShape shape) {
 
 void DrawTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
                                DrawScene *scene) {
-  if (!LayerManager::GetInstance()->isCurrentLayerValid()) {
-    QMessageBox::warning(nullptr, "warning", "please select layer first!");
+    if(!MainWindow::currentView)
+        return;
+  if (!MainWindow::currentView->layerManager->isCurrentLayerValid()) {
+//    QMessageBox::warning(nullptr, "warning", "please select layer first!");
     return;
   }
   auto p = event->scenePos().toPoint();
@@ -82,7 +86,7 @@ void DrawTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
           new QAction("create a group with cascading collidingItems");
       QAction *showallgroups = new QAction("show all groups");
       QObject::connect(creategroup, &QAction::triggered, this, [&] {
-        QTransform t;
+          QTransform t;
         GraphicsItem *selItem =
             dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos(),t));
         if (!selItem) return;
@@ -98,7 +102,7 @@ void DrawTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
         g->selectAll(1);
       });
       QObject::connect(creategroupcascading, &QAction::triggered, this, [&] {
-        QTransform t;
+          QTransform t;
         GraphicsItem *selItem =
             dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos(),t));
         if (!selItem) return;
@@ -110,7 +114,7 @@ void DrawTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
       });
 
       QObject::connect(showallgroups, &QAction::triggered, this, [&] {
-        QTransform t;
+          QTransform t;
         GraphicsItem *selItem =
             dynamic_cast<GraphicsItem *>(scene->itemAt(event->scenePos(),t));
         if (!selItem) return;
@@ -285,7 +289,7 @@ void SelectTool::mouseMoveEvent(QGraphicsSceneMouseEvent *event,
   if (selectMode == move) {
     setCursor(scene, Qt::ClosedHandCursor);
     if (dashRect) {
-      dashRect->setPos(initialPositions + c_last - c_down);
+        dashRect->setPos(initialPositions + c_last - c_down);
     }
   }
 
@@ -468,12 +472,16 @@ void RotationTool::mouseReleaseEvent(QGraphicsSceneMouseEvent *event,
   scene->mouseEvent(event);
 }
 
-RectTool::RectTool(DrawShape drawShape) : DrawTool(drawShape) { item = 0; }
+RectTool::RectTool(DrawShape drawShape) : DrawTool(drawShape) {
+  item = 0;
+  connect(this, &RectTool::signal_instanceItemDoubleClicked,
+          GlobalSignalInstance::instance(),
+          &GlobalSignalInstance::signal_wrapper_instanceItemDoubleClicked);
+}
 
 void RectTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
                                DrawScene *scene) {
   if (event->button() != Qt::LeftButton) return;
-
   scene->clearSelection();
   DrawTool::mousePressEvent(event, scene);
   switch (c_drawShape) {
@@ -489,15 +497,19 @@ void RectTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
     case text:
       item = new GraphicsTextItem(QRect(1, 1, 1, 1));
       break;
+    case instance:
+      item = new GraphicsInstanceItem(QRect(1, 1, 1, 1));
   }
   if (item == 0) return;
+  item->createHandles();
   c_down += QPoint(2, 2);
   auto p = event->scenePos().toPoint();
   QSize sz = scene->gridSizeSpace();
   p.setX(p.x() / sz.width() * sz.width());
   p.setY(p.y() / sz.height() * sz.height());
   item->setPos(p);
-  LayerManager::GetInstance()->GetCurrentLayer()->AddItem(item);
+  if(MainWindow::currentView)
+      MainWindow::currentView->layerManager->GetCurrentLayer()->AddItem(item);
   item->setSelected(true);
 
   selectMode = size;
@@ -507,7 +519,6 @@ void RectTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
 void RectTool::mouseMoveEvent(QGraphicsSceneMouseEvent *event,
                               DrawScene *scene) {
   setCursor(scene, Qt::CrossCursor);
-
   selectTool.mouseMoveEvent(event, scene);
 }
 
@@ -521,7 +532,8 @@ void RectTool::mouseReleaseEvent(QGraphicsSceneMouseEvent *event,
   if (p == (c_down - QPoint(2, 2))) {
     if (item != 0) {
       item->setSelected(false);
-      LayerManager::GetInstance()->GetCurrentLayer()->RemoveItem(item);
+      if(MainWindow::currentView)
+          MainWindow::currentView->layerManager->GetCurrentLayer()->RemoveItem(item);
       //      emit scene->itemRemoved();
       item = 0;
     }
@@ -536,7 +548,28 @@ void RectTool::mouseReleaseEvent(QGraphicsSceneMouseEvent *event,
                    size.width());
     item->setHeight(qCeil(item->height() + size.width() / 2) / size.height() *
                     size.height());
-    if (dynamic_cast<GraphicsTextItem *>(item)) c_drawShape = selection;
+    if (dynamic_cast<GraphicsTextItem *>(item))
+      c_drawShape = selection;
+    else if (dynamic_cast<GraphicsInstanceItem *>(item))
+      c_drawShape = selection;
+  }
+}
+
+void RectTool::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event,
+                                     DrawScene *scene) {
+  if (event->button() == Qt::LeftButton) {
+    if (!item) {
+      item = new GraphicsInstanceItem(QRect(1, 1, 1, 1));
+      if(MainWindow::currentView)
+          MainWindow::currentView->layerManager->GetCurrentLayer()->AddItem(item);
+    }
+    connect(this, &RectTool::signal_instanceItemDoubleClicked,
+            GlobalSignalInstance::instance(),
+            &GlobalSignalInstance::signal_wrapper_instanceItemDoubleClicked,
+            static_cast<Qt::ConnectionType>(Qt::DirectConnection |
+                                            Qt::UniqueConnection));
+    emit signal_instanceItemDoubleClicked(
+        static_cast<GraphicsInstanceItem *>(item));
   }
 }
 
@@ -574,8 +607,10 @@ void PolygonTool::mousePressEvent(QGraphicsSceneMouseEvent *event,
     } else if (c_drawShape == line) {
       item = new GraphicsLineItem(0);
     }
+    item->createHandles();
     item->setPos(p);
-    LayerManager::GetInstance()->GetCurrentLayer()->AddItem(item);
+    if(MainWindow::currentView)
+        MainWindow::currentView->layerManager->GetCurrentLayer()->AddItem(item);
     initialPositions = c_down;
     item->addPoint(c_down);
     item->setSelected(true);

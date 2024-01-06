@@ -374,7 +374,22 @@ void DrawScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent) {
 
 void DrawScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *mouseEvet) {
   DrawTool *tool = DrawTool::findTool(DrawTool::c_drawShape);
-  if (tool) tool->mouseDoubleClickEvent(mouseEvet, this);
+  if (tool) {
+    tool->mouseDoubleClickEvent(mouseEvet, this);
+  }
+  if (items(mouseEvet->scenePos()).size()) {
+    if (!dynamic_cast<GraphicsInstanceItem *>(
+            items(mouseEvet->scenePos()).at(0)))
+      return;
+    tool = DrawTool::findTool(instance);
+    if (tool) {
+      tool->mouseDoubleClickEvent(mouseEvet, this);
+    } else {
+      RectTool *tool = new RectTool(instance);
+      DrawTool::c_tools.push_back(tool);
+      if (tool) tool->mouseDoubleClickEvent(mouseEvet, this);
+    }
+  }
 }
 
 void DrawScene::focusInEvent(QFocusEvent *event) {

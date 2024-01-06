@@ -1,4 +1,4 @@
-#include "commands.h"
+﻿#include "commands.h"
 #include <QDebug>
 MoveShapeCommand::MoveShapeCommand(QGraphicsScene *graphicsScene, const QPointF &delta, QUndoCommand *parent)
     : QUndoCommand(parent)

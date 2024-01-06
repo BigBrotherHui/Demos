@@ -1,4 +1,4 @@
-#include "graphicsbezier.h"
+﻿#include "graphicsbezier.h"
 #include "drawscene.h"
 #include "util.h"
 GraphicsBezier::GraphicsBezier(bool bbezier, QGraphicsItem *parent)
@@ -24,6 +24,7 @@ QPainterPath GraphicsBezier::shape() const {
 }
 QGraphicsItem *GraphicsBezier::duplicate() const {
   GraphicsBezier *item = new GraphicsBezier();
+  item->createHandles();
   item->m_width = width();
   item->m_height = height();
   item->m_points = m_points;
@@ -38,7 +39,7 @@ QGraphicsItem *GraphicsBezier::duplicate() const {
   item->setTransformOriginPoint(transformOriginPoint());
   item->setRotation(rotation());
   item->setScale(scale());
-  item->setZValue(zValue() + 0.1);
+  item->setZValue(zValue());
   item->updateCoordinate();
   return item;
 }

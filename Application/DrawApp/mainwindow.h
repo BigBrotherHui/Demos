@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QGraphicsScene>
@@ -37,6 +37,7 @@ QT_END_NAMESPACE
 class QtVariantProperty;
 class QtProperty;
 class Group;
+class MapView;
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -51,7 +52,7 @@ class MainWindow : public QMainWindow {
   void newFile();
   void open();
   void save();
-  DrawView *createMdiChild();
+  DrawView *createMdiChild(QString str = "");
   void updateMenus();
   void updateWindowMenu();
   void setActiveSubWindow(QWidget *window);
@@ -86,7 +87,7 @@ class MainWindow : public QMainWindow {
 
   void about();
   void itemClicked(QString s);
-
+//  void bindLayerWidgets(DrawView *pv);
  protected:
   void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
@@ -98,13 +99,12 @@ class MainWindow : public QMainWindow {
   void createToolbars();
   void createPropertyEditor();
   void createToolBox();
-
+//  std::map<QString, DrawView *> viewmap;
   DrawView *activeMdiChild();
   QMdiSubWindow *findMdiChild(const QString &fileName);
   QTreeWidget *layerWidget;
   QListWidget *itemWidget;
   QMenu *windowMenu;
-  QDockWidget *mapViewDock;
   QMdiArea *mdiArea;
   QSignalMapper *windowMapper;
   CommandWidget *mCommandWidget;
@@ -163,6 +163,7 @@ class MainWindow : public QMainWindow {
   QAction *polygonAct;
   QAction *polylineAct;
   QAction *textAct;
+  QAction *instanceAct;
   //  QAction *bezierAct;
   //  QAction *rotateAct;
 
@@ -187,6 +188,10 @@ class MainWindow : public QMainWindow {
   QUndoView *undoView;
   // statusbar label
   QLabel *m_posInfo;
+public:
+  static DrawView *currentView;
+  QDockWidget *docklayer;
+  QDockWidget *mapViewDock;
 };
 
 #endif  // MAINWINDOW_H
