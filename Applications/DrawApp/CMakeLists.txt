@@ -1,5 +1,10 @@
 PROJECT(DrawApp)
-
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  message(STATUS "Set up ccache ...")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif()
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -33,7 +38,7 @@ source_group("Forms" REGULAR_EXPRESSION ".ui$")
 source_group("Generated Files" REGULAR_EXPRESSION "ui_.*\\.h$|moc.*\\.cpp$|\\.stamp$|\\.rule$")
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${PROJECT_SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Application")
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Applications")
 #设置输出目录（属性-》常规-》输出目录）（不需要改动）
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>
@@ -49,6 +54,8 @@ else()
     # 其他系统的操作
     # ...
 endif()
+add_dependencies(${PROJECT_NAME} PropertyBrowser)
+
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Widgets Qt5::Core Qt5::Xml Qt5::Svg Qt5::Concurrent Qt5::OpenGL)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>/PropertyBrowser.lib)
 

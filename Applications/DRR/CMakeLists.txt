@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 project(DRR LANGUAGES CXX CUDA)
 
 
-
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  message(STATUS "Set up ccache ...")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif()
 #include(CheckLanguage)
 #if(NOT CUDAToolkit_FOUND)
 #    include(FindCUDAToolkit)
@@ -26,7 +31,7 @@ find_package(MITK 2023.04 REQUIRED)
 # glog
 find_package(Glog REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/ThirdParty)
-include_directories(${CMAKE_SOURCE_DIR}/Modules/DRR_GPU)
+#include_directories(${CMAKE_SOURCE_DIR}/Modules/DRR_GPU)
 
 file(GLOB_RECURSE SOURCE_FILES *.cu *.cpp *.cxx)
 file(GLOB_RECURSE HEADER_FILES *.cuh *.h *.hpp *.hxx)

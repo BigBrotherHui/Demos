@@ -2,7 +2,12 @@
 
 cmake_minimum_required(VERSION 3.1...3.23)
 project(CgalDemoApp)
-
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  message(STATUS "Set up ccache ...")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif()
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Instruct CMake to run moc automatically when needed.
@@ -76,7 +81,7 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_COMMAND ${CMAKE_BINARY_DIR}/bin/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>/${PROJECT_NAME}.exe)
     set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>)
 endif()
-  set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Application")
+  set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Applications")
 
   # Link with Qt libraries
   target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::OpenGL Qt5::Gui

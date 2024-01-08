@@ -1,5 +1,10 @@
 PROJECT(ViewerApp)
-
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  message(STATUS "Set up ccache ...")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif()
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -47,7 +52,7 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
 endif()
 #添加项目依赖项
 add_dependencies(${PROJECT_NAME} Core)
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Application")
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Applications")
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Widgets Qt5::Core)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>/Core.lib)
 

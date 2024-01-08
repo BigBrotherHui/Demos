@@ -1,0 +1,6 @@
+include(CMakeFindDependencyMacro)
+
+# 作为例子，myLib 需要 OpenCV 这个依赖
+find_dependency(CUDA REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/SiddonGPUTargets.cmake")

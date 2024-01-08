@@ -1,4 +1,10 @@
 PROJECT(FillHoleApp)
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  message(STATUS "Set up ccache ...")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif()
 set(CMAKE_CXX_FLAGS_RELEASE "/MD")
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 find_package(CGAL COMPONENTS Qt5)
@@ -29,7 +35,7 @@ foreach(dll ${LIBIGL_DLL})
 endforeach()
 add_executable(${PROJECT_NAME} ${SRCFILES} ${HEADERS})
 # 设置筛选器
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Application")
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Applications")
 #设置输出目录（属性-》常规-》输出目录）（不需要改动）
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>
