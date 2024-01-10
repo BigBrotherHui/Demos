@@ -53,7 +53,7 @@ CIT 6, 89-94 (1998).
 
 #include "itkEuler3DTransform.h"
 #include "itkSiddonJacobsRayCastInterpolateImageFunction.h"
-
+#include "itkIntensityWindowingImageFilter.h"
 
 
 void usage()
@@ -82,8 +82,8 @@ void usage()
 }
 
 
-bool drr(itk::Image<short,3>::Pointer inputImage,std::string outputFileName, float scd = 1000, float rx = 0, float ry = 0, float rz = 0,
-	bool verbose = false, bool customized_iso = false,bool customized_2DCX=false,bool rprojection=0,float tx=0,float ty=0,float tz=0)
+itk::Image<unsigned char,3>::Pointer drr(itk::Image<short,3>::Pointer inputImage,std::string outputFileName, float scd = 1000, float rx = 0, float ry = 0, float rz = 0,
+	float tx = 0, float ty = 0, float tz = 0,float threshold=0,bool verbose = false, bool customized_iso = false,bool customized_2DCX=false,bool rprojection=0)
 {
 	const char *output_name = outputFileName.c_str();
 
@@ -122,10 +122,9 @@ bool drr(itk::Image<short,3>::Pointer inputImage,std::string outputFileName, flo
 	float o2Dx;
 	float o2Dy;
 
-	float threshold = 0.;
 
 	// Create a timer to record calculation time.
-	itk::TimeProbesCollectorBase timer;
+	//itk::TimeProbesCollectorBase timer;
 
 	if (verbose) 
 	{
@@ -360,9 +359,9 @@ bool drr(itk::Image<short,3>::Pointer inputImage,std::string outputFileName, flo
 
 	filter->SetOutputOrigin( origin );
 
-	timer.Start("DRR generation");
+	//timer.Start("DRR generation");
 	filter->Update();
-	timer.Stop("DRR generation");
+	//timer.Stop("DRR generation");
 
 	if (verbose)
 	{
@@ -372,66 +371,72 @@ bool drr(itk::Image<short,3>::Pointer inputImage,std::string outputFileName, flo
 			<< origin[2] << std::endl;
 	}
 
+	typedef itk::IntensityWindowingImageFilter <InputImageType, OutputImageType> IntensityWindowingImageFilterType;
+	IntensityWindowingImageFilterType::Pointer intensityFilter = IntensityWindowingImageFilterType::New();
+	intensityFilter->SetInput(filter->GetOutput());
+	intensityFilter->SetWindowLevel(255, 127);//window,level//180,90
+	intensityFilter->SetOutputMinimum(0);
+	intensityFilter->SetOutputMaximum(255);
+	intensityFilter->Update();
+	/*typedef itk::RescaleIntensityImageFilter< 
+		InputImageType, OutputImageType > RescaleFilterType;
+	RescaleFilterType::Pointer rescaler = RescaleFilterType::New();
+	rescaler->SetOutputMinimum(   0 );
+	rescaler->SetOutputMaximum( 255 );
+	rescaler->SetInput( filter->GetOutput() );*/
+
+	//timer.Start("DRR post-processing");
+	//rescaler->Update();
+
+	/* Out of some reason, the computed projection is upsided-down.
+	 Here we use a FilpImageFilter to flip the images in y direction.*/
+	typedef itk::FlipImageFilter< OutputImageType > FlipFilterType;
+	FlipFilterType::Pointer flipFilter = FlipFilterType::New();
+
+	typedef FlipFilterType::FlipAxesArrayType FlipAxesArrayType;
+	FlipAxesArrayType flipArray;
+	flipArray[0] = 0;
+	flipArray[1] = 1;
+
+	flipFilter->SetFlipAxes( flipArray );
+	flipFilter->SetInput(intensityFilter->GetOutput() );
+	flipFilter->Update();
+
+//timer.Stop("DRR post-processing");
 	// create writer
 
-	if (output_name) 
-	{
+	//if (output_name) 
+	//{
 
 		// The output of the filter can then be passed to a writer to
 		// save the DRR image to a file.
 
-		typedef itk::RescaleIntensityImageFilter< 
-			InputImageType, OutputImageType > RescaleFilterType;
-		RescaleFilterType::Pointer rescaler = RescaleFilterType::New();
-		rescaler->SetOutputMinimum(   0 );
-		rescaler->SetOutputMaximum( 255 );
-		rescaler->SetInput( filter->GetOutput() );
-
-		timer.Start("DRR post-processing");
-		rescaler->Update();
-
-		// Out of some reason, the computed projection is upsided-down.
-		// Here we use a FilpImageFilter to flip the images in y direction.
-		typedef itk::FlipImageFilter< OutputImageType > FlipFilterType;
-		FlipFilterType::Pointer flipFilter = FlipFilterType::New();
-
-		typedef FlipFilterType::FlipAxesArrayType FlipAxesArrayType;
-		FlipAxesArrayType flipArray;
-		flipArray[0] = 0;
-		flipArray[1] = 1;
-
-		flipFilter->SetFlipAxes( flipArray );
-		flipFilter->SetInput( rescaler->GetOutput() );
-		flipFilter->Update();
-
-		timer.Stop("DRR post-processing");
-
-		typedef itk::ImageFileWriter< OutputImageType >  WriterType;
-		WriterType::Pointer writer = WriterType::New();
+		//typedef itk::ImageFileWriter< OutputImageType >  WriterType;
+		//WriterType::Pointer writer = WriterType::New();
 		//writer->SetImageIO(itk::GDCMImageIO::New());
 		
 		// Now we are ready to write the projection image.
-		writer->SetFileName( output_name );
-		writer->SetInput( flipFilter->GetOutput() );
+		//writer->SetFileName( output_name );
+		//writer->SetInput( flipFilter->GetOutput() );
 
-		try 
-		{ 
-			std::cout << "Writing image: " << output_name << std::endl;
-			writer->Update();
-		} 
-		catch( itk::ExceptionObject & err ) 
-		{ 
-			std::cerr << "ERROR: ExceptionObject caught !" << std::endl; 
-			std::cerr << err << std::endl; 
-		} 
-	}
-	else 
-	{
-		filter->Update();
-	}
+		//try 
+		//{ 
+		//	std::cout << "Writing image: " << output_name << std::endl;
+		//	writer->Update();
+		//} 
+		//catch( itk::ExceptionObject & err ) 
+		//{ 
+		//	std::cerr << "ERROR: ExceptionObject caught !" << std::endl; 
+		//	std::cerr << err << std::endl; 
+		//} 
+	//}
+	//else 
+	//{
+	//	filter->Update();
+	//}
 
-	timer.Report();
+	//timer.Report();
 
-	return 1;
+	return flipFilter->GetOutput();
 }
 

@@ -37,6 +37,14 @@
 #include <mitkDisplayActionEventHandlerStd.h>
 #include <itkImageDuplicator.h>
 #include <itkPNGImageIO.h>
+#include <vtkTransformPolyDataFilter.h>
+#include <mitkGizmo.h>
+#include <vtkCamera.h>
+#include <vtkFrustumSource.h>
+#include <vtkPlaneSource.h>
+#include <vtkTexture.h>
+#include <vtkNamedColors.h>
+#include <vtkPlanes.h>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -53,14 +61,19 @@ Widget::Widget(QWidget *parent)
 	m_DisplayActionEventHandler->InitActions();
 	vtkOutputWindow::GlobalWarningDisplayOff();
 	m_renderwindow = new QmitkRenderWindow(this);
-	m_renderwindow2d = new QmitkRenderWindow(this);
+	m_renderwindow2dside = new QmitkRenderWindow(this);
+	m_renderwindow2dfront = new QmitkRenderWindow(this);
 	m_data_storage_ = mitk::StandaloneDataStorage::New();
-	m_data_storage_2d= mitk::StandaloneDataStorage::New();
+	m_data_storage_2dside= mitk::StandaloneDataStorage::New();
+	m_data_storage_2dfront = mitk::StandaloneDataStorage::New();
 	m_renderwindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
 	m_renderwindow->GetRenderer()->SetDataStorage(m_data_storage_);
-	m_renderwindow2d->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
-	m_renderwindow2d->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Axial);
-	m_renderwindow2d->GetRenderer()->SetDataStorage(m_data_storage_2d);
+	m_renderwindow2dside->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
+	m_renderwindow2dside->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Axial);
+	m_renderwindow2dside->GetRenderer()->SetDataStorage(m_data_storage_2dside);
+	m_renderwindow2dfront->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
+	m_renderwindow2dfront->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Axial);
+	m_renderwindow2dfront->GetRenderer()->SetDataStorage(m_data_storage_2dfront);
     QList<int> sizes;
 	sizes << 900 << 100;
     ui->splitter->setSizes(sizes);
@@ -68,12 +81,15 @@ Widget::Widget(QWidget *parent)
     l->addWidget(m_renderwindow);
 	m_lw= new QmitkLevelWindowWidget(this);
 	m_lw->SetDataStorage(m_data_storage_);
-	//m_lw->GetManager()->LevelWindowChanged.AddListener(mitk::MessageDelegate1<Widget, const mitk::LevelWindow&>(this, &Widget::levelWindowChanged));
+	m_lw->GetManager()->LevelWindowChanged.AddListener(mitk::MessageDelegate1<Widget, const mitk::LevelWindow&>(this, &Widget::levelWindowChanged));
 	l->addWidget(m_lw);
-	l->addWidget(m_renderwindow2d);
+	l->addWidget(m_renderwindow2dfront);
+	//l->addWidget(m_renderwindow2dside);
+	m_renderwindow2dside->setVisible(false);
 	l->setStretchFactor(m_renderwindow, 5);
 	l->setStretchFactor(m_lw, 1);
-	l->setStretchFactor(m_renderwindow2d, 5);
+	l->setStretchFactor(m_renderwindow2dfront, 5);
+	l->setStretchFactor(m_renderwindow2dside, 5);
 }
 
 Widget::~Widget()
@@ -134,6 +150,175 @@ void Widget::levelWindowChanged(const mitk::LevelWindow& levelWindow)
 	mitk::RenderingManager::GetInstance()->RequestUpdate(m_renderwindow->GetVtkRenderWindow());
 }
 
+void Widget::setImage(bool front, itk::Image<unsigned char, 3>::Pointer img)
+{
+	if(front)
+		m_data_storage_2dfront->GetNamedObject<mitk::Image>("drrfront")->SetImportChannel(img->GetBufferPointer());
+	else
+		m_data_storage_2dside->GetNamedObject<mitk::Image>("drrside")->SetImportChannel(img->GetBufferPointer());
+	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();	
+	transform->PreMultiply();
+	
+	transform->Translate(isocenter[0], isocenter[1], isocenter[2]);
+	transform->RotateX(ui->horizontalSlider_rotate_x->value());
+	transform->RotateY(ui->horizontalSlider_rotate_y->value());
+	transform->RotateZ(ui->horizontalSlider_rotate_z->value());
+	transform->Translate(-isocenter[0], -isocenter[1], -isocenter[2]);
+	transform->Translate(ui->horizontalSlider_translate_x->value(), ui->horizontalSlider_translate_y->value(), ui->horizontalSlider_translate_z->value());
+	transform->GetMatrix()->Invert();
+	m_data_storage_->GetNamedObject<mitk::Surface>("cam")->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(transform->GetMatrix());
+	/*vtkCamera* camera = m_renderwindow->GetRenderer()->GetVtkRenderer()->GetActiveCamera();
+	double* focalpoint = camera->GetFocalPoint();
+	double* position = camera->GetPosition();
+	double* viewup = camera->GetViewUp();
+	mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow->GetVtkRenderWindow(), m_data_storage_);
+	camera->SetPosition(position);
+	camera->SetViewUp(viewup);
+	camera->SetFocalPoint(focalpoint);
+	m_renderwindow->GetRenderer()->GetVtkRenderer()->ResetCameraClippingRange();*/
+
+	static bool flag{ false };
+	if (flag)
+	{
+		typedef itk::FlipImageFilter< itk::Image<unsigned char, 3> > FlipFilterType;
+		FlipFilterType::Pointer flipFilter = FlipFilterType::New();
+		typedef FlipFilterType::FlipAxesArrayType FlipAxesArrayType;
+		FlipAxesArrayType flipArray;
+		flipArray[0] = 0;
+		flipArray[1] = 1;
+		flipFilter->SetFlipAxes(flipArray);
+		flipFilter->SetInput(img);
+		flipFilter->Update();
+		itk::ImageToVTKImageFilter<itk::Image<unsigned char, 3>>::Pointer f = itk::ImageToVTKImageFilter<itk::Image<unsigned char, 3>>::New();
+		f->SetInput(flipFilter->GetOutput());
+		f->Update();
+		m_actor_farplane->GetTexture()->SetInputData(f->GetOutput());
+		vtkSmartPointer<vtkMatrix4x4> vmt = vtkSmartPointer<vtkMatrix4x4>::New();
+		vmt->DeepCopy(transform->GetMatrix());
+		for(int i=0;i<3;++i)
+		{
+			vmt->SetElement(i, 3, vmt->GetElement(i, 3) + vmt->GetElement(i, 1) * 200);
+		}
+		m_actor_farplane->SetUserMatrix(vmt);
+
+		//vtkCamera* camera = m_renderwindow->GetRenderer()->GetVtkRenderer()->GetActiveCamera();
+		//double planesArray[24];
+		//// 获取当前视锥体的6个平面
+		//camera->GetFrustumPlanes(1.0, planesArray);
+
+		//vtkSmartPointer<vtkPlanes> planes =
+		//	vtkSmartPointer<vtkPlanes>::New();
+		//planes->SetFrustumPlanes(planesArray);
+
+		//// 创建视锥体
+		//vtkSmartPointer<vtkFrustumSource> frustumSource =
+		//	vtkSmartPointer<vtkFrustumSource>::New();
+		//frustumSource->ShowLinesOff();
+		//frustumSource->SetPlanes(planes);
+		//frustumSource->Update();
+		//static_cast<vtkPolyDataMapper *>(actorfrustum->GetMapper())->SetInputData(frustumSource->GetOutput());
+		//TODO:初始不要先移动Z轴；移动Z轴后平面纹理不对；绕x、z旋转时旋转轴不对
+		m_renderwindow->renderWindow()->Render();
+		return;
+	}
+	if(!flag)
+	{
+		flag = 1;
+	}
+	vtkSmartPointer<vtkPlaneSource> farplane = vtkSmartPointer<vtkPlaneSource>::New();
+	Eigen::Vector3d eisocenter{isocenter};
+	//eisocenter[1] += 200;
+	eisocenter[0] -= 512 / 2;
+	eisocenter[2] -= 512 / 2;
+
+	//farplane仅对x、z平移做出反应，对旋转和y轴的平移应当忽略
+	farplane->SetOrigin((eisocenter.data()));
+	farplane->SetPoint1(Eigen::Vector3d(eisocenter + 512 * Eigen::Vector3d::UnitX()).data());
+	farplane->SetPoint2(Eigen::Vector3d(eisocenter + 512 * Eigen::Vector3d::UnitZ()).data());
+	farplane->Update();
+	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputData(farplane->GetOutput());
+	m_actor_farplane = vtkSmartPointer<vtkActor>::New();
+	m_actor_farplane->SetMapper(mapper);
+	vtkSmartPointer<vtkTexture> texture = vtkSmartPointer<vtkTexture>::New();
+	typedef itk::FlipImageFilter< itk::Image<unsigned char, 3> > FlipFilterType;
+	FlipFilterType::Pointer flipFilter = FlipFilterType::New();
+	typedef FlipFilterType::FlipAxesArrayType FlipAxesArrayType;
+	FlipAxesArrayType flipArray;
+	flipArray[0] = 0;
+	flipArray[1] = 1;
+	flipFilter->SetFlipAxes(flipArray);
+	flipFilter->SetInput(img);
+	flipFilter->Update();
+	itk::ImageToVTKImageFilter<itk::Image<unsigned char, 3>>::Pointer f = itk::ImageToVTKImageFilter<itk::Image<unsigned char, 3>>::New();
+	f->SetInput(flipFilter->GetOutput());
+	f->Update();
+	texture->SetInputData(f->GetOutput());
+	m_actor_farplane->SetTexture(texture);
+	m_renderwindow->GetRenderer()->GetVtkRenderer()->AddActor(m_actor_farplane);
+
+	// 通过该类得到指定物体的颜色
+	vtkSmartPointer<vtkNamedColors> colors =
+		vtkSmartPointer<vtkNamedColors>::New();
+
+	//vtkCamera* camera = m_renderwindow->GetRenderer()->GetVtkRenderer()->GetActiveCamera();
+	//double planesArray[24];
+	//// 获取当前视锥体的6个平面
+	//camera->GetFrustumPlanes(1.0, planesArray);
+
+	//vtkSmartPointer<vtkPlanes> planes =
+	//	vtkSmartPointer<vtkPlanes>::New();
+	//planes->SetFrustumPlanes(planesArray);
+
+	//// 创建视锥体
+	//vtkSmartPointer<vtkFrustumSource> frustumSource =
+	//	vtkSmartPointer<vtkFrustumSource>::New();
+	//frustumSource->ShowLinesOff();
+	//frustumSource->SetPlanes(planes);
+	//frustumSource->Update();
+	//vtkSmartPointer<vtkPolyDataMapper> mapperfrustum = vtkSmartPointer<vtkPolyDataMapper>::New();
+	//mapperfrustum->SetInputData(frustumSource->GetOutput());
+	//actorfrustum = vtkSmartPointer<vtkActor>::New();
+	//actorfrustum->SetMapper(mapperfrustum);
+	//m_renderwindow->GetRenderer()->GetVtkRenderer()->AddActor(actorfrustum);
+
+	m_renderwindow->renderWindow()->Render();
+}
+
+void Widget::on_pushButton_resetView_clicked()
+{
+	mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow->GetVtkRenderWindow(), m_data_storage_);
+}
+
+vtkSmartPointer<vtkPolyData> Widget::transformPolyData(vtkSmartPointer<vtkMatrix4x4> mt, vtkSmartPointer<vtkPolyData> p)
+{
+	if (!p)
+		return nullptr;
+	if (!mt)
+		mt = vtkSmartPointer<vtkMatrix4x4>::New();
+	vtkSmartPointer<vtkPolyData> ret = vtkSmartPointer<vtkPolyData>::New();
+	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+	transform->SetMatrix(mt);
+	vtkSmartPointer<vtkTransformPolyDataFilter> fi = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+	fi->SetTransform(transform);
+	fi->SetInputData(p);
+	fi->Update();
+	ret->DeepCopy(fi->GetOutput());
+	return ret;
+}
+
+void Widget::addPoint(double* pt)
+{
+	mitk::DataNode::Pointer dt1 = mitk::DataNode::New();
+	dt1->SetProperty("pointsize", mitk::FloatProperty::New(10));
+	mitk::PointSet::Pointer ps1 = mitk::PointSet::New();
+	dt1->SetData(ps1);
+	ps1->SetPoint(0, pt);
+	m_data_storage_->Add(dt1);
+	mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow->GetVtkRenderWindow(), m_data_storage_);
+
+}
+
 void Widget::on_pushButton_importImage_clicked()
 {
     QString dir=QFileDialog::getExistingDirectory(this, "选择图像序列", "D:/Images/");
@@ -159,13 +344,7 @@ void Widget::on_pushButton_importImage_clicked()
 	reader->ForceOrthogonalDirectionOff();
 	try {
 		reader->Update();
-		using DuplicatorType = itk::ImageDuplicator<ImageType>;
-		auto duplicator = DuplicatorType::New();
-		duplicator->SetInputImage(reader->GetOutput());
-		duplicator->Update();
-		m_image = duplicator->GetOutput();
-
-		ImageType::Pointer clonedImage = duplicator->GetOutput();
+		m_image = reader->GetOutput();
 	}
 	catch (itk::ExceptionObject& err)
 	{
@@ -177,16 +356,19 @@ void Widget::on_pushButton_importImage_clicked()
 	mitk::Image::Pointer mitkImage = mitk::Image::New();
 	mitk::GrabItkImageMemory(reader->GetOutput(), mitkImage);
 	mitk::DataNode::Pointer dt = mitk::DataNode::New();
+	mitk::Point3D origin;
+	origin[0] = origin[1] = origin[2] = 0;
+	mitkImage->SetOrigin(origin);
 	dt->SetName("image");
 	dt->SetBoolProperty("volumerendering", 1);
 	dt->SetData(mitkImage);
 	m_data_storage_->Add(dt);
 
-	float scd = 200;
-	drr(reader->GetOutput(), "drr.png", 200);
+	//float scd = 200;
+	//drr(reader->GetOutput(), "drr.png", 200);
 
-	mitk::IOUtil::Load("drr.png", *m_data_storage_2d);
-	mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow2d->GetVtkRenderWindow(), m_data_storage_2d);
+	//mitk::IOUtil::Load("drr.png", *m_data_storage_2d);
+	mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow->GetVtkRenderWindow(), m_data_storage_);
 	/*using PixelType = unsigned char;
 	const unsigned int  Dimension = 2;
 	typedef itk::Image<PixelType, Dimension> DRRImageType;
@@ -227,44 +409,167 @@ void Widget::on_pushButton_importImage_clicked()
 	//	std::cerr << e << std::endl;
 	//	return;
 	//}
-
+	double imOrigin[3]{ 0,0,0 };
+	double* imRes = (double*)m_image->GetSpacing().GetDataPointer();
+	double imSize[3];
+	auto sz = m_image->GetLargestPossibleRegion().GetSize();
+	imSize[0] = sz[0];
+	imSize[1] = sz[1];
+	imSize[2] = sz[2];
+	isocenter[0] = imOrigin[0] + imRes[0] * static_cast<double>(imSize[0]) / 2.0;
+	isocenter[1] = imOrigin[1] + imRes[1] * static_cast<double>(imSize[1]) / 2.0;
+	isocenter[2] = imOrigin[2] + imRes[2] * static_cast<double>(imSize[2]) / 2.0;
 
 	vtkNew<vtkConeSource> camCS;
-	camCS->SetHeight(1.5);
+	camCS->SetHeight(1.6);
 	camCS->SetResolution(12);
 	camCS->SetRadius(0.4);
+	camCS->Update();
+	vtkSmartPointer<vtkTransform> t = vtkSmartPointer<vtkTransform>::New();
+	t->RotateZ(-90);
+	t->Translate(0.8, 0, 0);
 
 	vtkNew<vtkCubeSource> camCBS;
-	camCBS->SetXLength(1.5);
-	camCBS->SetZLength(0.8);
-	camCBS->SetCenter(0.4, 0, 0);
+	camCBS->SetXLength(.8);
+	camCBS->SetYLength(1.2);
+	camCBS->SetZLength(.8);
+	camCBS->SetCenter(0, -1.0, 0);
+	camCBS->Update();
+
+	vtkSmartPointer<vtkPlaneSource> closeplane= vtkSmartPointer<vtkPlaneSource>::New();
+	closeplane->SetCenter(0, 0, 0);
+	closeplane->SetNormal(0, 1, 0);
+	closeplane->Update();
 
 	vtkNew<vtkAppendPolyData> camAPD;
-	camAPD->AddInputConnection(camCS->GetOutputPort());
-	camAPD->AddInputConnection(camCBS->GetOutputPort());
+	camAPD->AddInputData(transformPolyData(t->GetMatrix(),camCS->GetOutput()));
+	camAPD->AddInputData(camCBS->GetOutput());
+	camAPD->AddInputData(closeplane->GetOutput());
 	camAPD->Update();
 
+	/*vtkSmartPointer<vtkFrustumSource> frustumSource =
+		vtkSmartPointer<vtkFrustumSource>::New();
+	frustumSource->ShowLinesOff();
+	frustumSource->SetPlanes();*/
+
+
 	mitk::Surface::Pointer sur = mitk::Surface::New();
-	sur->SetVtkPolyData(camAPD->GetOutput());
 	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-	transform->Translate(0, 0, scd);
-	transform->RotateY(-90);
+	transform->Translate(isocenter[0], isocenter[1], isocenter[2]);
 	transform->Scale(50, 50, 50);
-	sur->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(transform->GetMatrix());
+	vtkSmartPointer<vtkTransformPolyDataFilter> filter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+	filter->SetInputData(camAPD->GetOutput());
+	filter->SetTransform(transform);
+	filter->Update();
+	sur->SetVtkPolyData(filter->GetOutput());
+
 	mitk::DataNode::Pointer surNode = mitk::DataNode::New();
 	surNode->SetData(sur);
-	surNode->SetName("sur");
+	surNode->SetName("cam");
+	//mitk::Gizmo::AddGizmoToNode(surNode, m_data_storage_);
 	m_data_storage_->Add(surNode);
 	
 	mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow->GetVtkRenderWindow(), m_data_storage_);
 }
 
+void Widget::on_horizontalSlider_scd_valueChanged(int v)
+{
+	auto frontImage = drr(m_image, "", v, ui->horizontalSlider_rotate_x->value(), ui->horizontalSlider_rotate_y->value(), ui->horizontalSlider_rotate_z->value(),
+		ui->horizontalSlider_translate_x->value(), ui->horizontalSlider_translate_y->value(), ui->horizontalSlider_translate_z->value());
+	setImage(1, frontImage);
+	mitk::RenderingManager::GetInstance()->RequestUpdateAll();
+}
+
+void Widget::on_horizontalSlider_translate_x_valueChanged(int v)
+{
+	auto frontImage = drr(m_image, "",  ui->horizontalSlider_scd->value(), ui->horizontalSlider_rotate_x->value(), ui->horizontalSlider_rotate_y->value(), ui->horizontalSlider_rotate_z->value(),
+		v,ui->horizontalSlider_translate_y->value(),ui->horizontalSlider_translate_z->value());
+	setImage(1, frontImage);
+	mitk::RenderingManager::GetInstance()->RequestUpdateAll();
+}
+
+void Widget::on_horizontalSlider_translate_y_valueChanged(int v)
+{
+	auto frontImage = drr(m_image, "", ui->horizontalSlider_scd->value(), ui->horizontalSlider_rotate_x->value(), ui->horizontalSlider_rotate_y->value(), ui->horizontalSlider_rotate_z->value(),
+		ui->horizontalSlider_translate_x->value(), v,  ui->horizontalSlider_translate_z->value());
+	setImage(1, frontImage);
+	mitk::RenderingManager::GetInstance()->RequestUpdateAll();
+}
+
 void Widget::on_horizontalSlider_translate_z_valueChanged(int v)
 {
-	drr(m_image, "drr.png", v,0,0,-90);
+	auto frontimage = drr(m_image, "", ui->horizontalSlider_scd->value(), ui->horizontalSlider_rotate_x->value(), ui->horizontalSlider_rotate_y->value(), ui->horizontalSlider_rotate_z->value(),
+		ui->horizontalSlider_translate_x->value(), ui->horizontalSlider_translate_y->value(),v );
+	auto sideimage = drr(m_image, "drr.png", v, 0, 0, -90, 0);
+	//itk::Image< unsigned char, 3 >::Pointer img=
+	//if (!gpu)
+	//	gpu = new SiddonGPU;
+	//itk::Image<float, 3>::SizeType size = m_image->GetLargestPossibleRegion().GetSize();
+	//qDebug() << size[0] << size[1] << size[2];
+	//itk::Image<float, 3>::SpacingType spacing = m_image->GetSpacing();
+	//qDebug() << spacing[0] << spacing[1] << spacing[2];
+	//int _3dpixelNum[3];
+	//float _3dpixelSpacing[3];
+	//for (int i = 0; i < 3; i++)
+	//{
+	//	_3dpixelNum[i] = size[i];
+	//	_3dpixelSpacing[i] = spacing[0];
+	//}
+
+	//gpu->SetImg3d((float *)m_image->GetBufferPointer(), _3dpixelSpacing, _3dpixelNum);
+
+	//typedef itk::Euler3DTransform< double >  TransformType;
+	//TransformType::Pointer transform = TransformType::New();
+	//transform->SetComputeZYX(true);
+	//TransformType::OutputVectorType translation;
+	//translation[0] = 0;
+	//translation[1] = 0;
+	//translation[2] = 1000;
+	//// constant for converting degrees into radians
+	//const double dtr = (atan(1.0) * 4.0) / 180.0;
+	//transform->SetTranslation(translation);
+	//transform->SetRotation(dtr * 0, dtr * 0, dtr * -90);
+	//itk::Image<short, 3>::PointType  imOrigin = m_image->GetOrigin();
+	//itk::Image<short, 3>::SpacingType imRes = m_image->GetSpacing();
+	//typedef itk::Image<short, 3>::RegionType     InputImageRegionType;
+	//typedef InputImageRegionType::SizeType InputImageSizeType;
+	//InputImageRegionType imRegion = m_image->GetBufferedRegion();
+	//InputImageSizeType   imSize = imRegion.GetSize();
+	//TransformType::InputPointType isocenter;
+	//isocenter[0] = imOrigin[0] + imRes[0] * static_cast<double>(imSize[0]) / 2.0;
+	//isocenter[1] = imOrigin[1] + imRes[1] * static_cast<double>(imSize[1]) / 2.0;
+	//isocenter[2] = imOrigin[2] + imRes[2] * static_cast<double>(imSize[2]) / 2.0;
+	//transform->SetCenter(isocenter);
+	//TransformType::MatrixType mt = transform->GetMatrix();
+	//float transformMatrix[12];
+	//for (int i = 0; i < 3; ++i)
+	//{
+	//	for (int j = 0; j < 4; ++j)
+	//		transformMatrix[i * 4 + j] = mt[i][j];
+	//}
+	//gpu->SetTransformMatrix(transformMatrix);
+
+	//int imageSize[2]{ 512,512 };
+	//int ImageSize = 512 * 512;
+	//if (!mask)
+	//	mask = new float[ImageSize] {1};
+
+	//if (!result)
+	//	result = new float[ImageSize] {0.0};
+
+	//float tmp[12]{ 0 };
+	//gpu->SetTransformMatrix(tmp);
+
+	//float spacing2d[2]{ .5,.5 };
+	//gpu->SetImg2dParameter(spacing2d, imageSize, mask);
+	//gpu->Run(transformMatrix, result);
+
+
+
 	//m_data_storage_->Remove(m_data_storage_->GetNamedNode("drr"));
 	//mitk::IOUtil::Load("drr.png", *m_data_storage_2d);
-	using PixelType = unsigned char;
+
+	/*using PixelType = unsigned char;
 	const unsigned int  Dimension = 2;
 	typedef itk::Image<PixelType, Dimension> DRRImageType;
 	typedef itk::ImageFileReader<DRRImageType> DRRReaderType;
@@ -280,14 +585,65 @@ void Widget::on_horizontalSlider_translate_z_valueChanged(int v)
 		std::cerr << "exception in file reader" << std::endl;
 		std::cerr << e << std::endl;
 		return;
+	}*/
+	mitk::DataNode::Pointer frontnode= m_data_storage_2dfront->GetNamedNode("drrfront");
+	if(!frontnode)
+	{
+		frontnode = mitk::DataNode::New();
+		frontnode->SetName("drrfront");
+		mitk::Image::Pointer img = mitk::Image::New();
+		img->InitializeByItk(frontimage.GetPointer());
+		img->SetImportChannel(frontimage->GetBufferPointer());
+		frontnode->SetData(img);
+		m_data_storage_2dfront->Add(frontnode);
+
+		mitk::DataNode::Pointer sidenode = mitk::DataNode::New();
+		sidenode->SetName("drrside");
+		mitk::Image::Pointer imgside = mitk::Image::New();
+		imgside->InitializeByItk(sideimage.GetPointer());
+		imgside->SetImportChannel(sideimage->GetBufferPointer());
+		sidenode->SetData(imgside);
+		m_data_storage_2dside->Add(sidenode);
+
+		mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow2dfront->renderWindow(), m_data_storage_2dfront);
+		mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_renderwindow2dside->renderWindow(), m_data_storage_2dside);
 	}
-	m_data_storage_2d->GetNamedObject<mitk::Image>("drr")->SetImportChannel(drrreader->GetOutput()->GetBufferPointer());
-	
-	mitk::Surface::Pointer sur =m_data_storage_->GetNamedObject<mitk::Surface>("sur");
-	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+	else
+	{
+		setImage(1, frontimage);
+		setImage(0, sideimage);
+	}
+		
+
+	//mitk::Surface::Pointer sur =m_data_storage_->GetNamedObject<mitk::Surface>("sur");
+	/*vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 	transform->Translate(0, 0, v);
 	transform->RotateZ(-90);
 	transform->Scale(50, 50, 50);
-	sur->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(transform->GetMatrix());
+	sur->GetGeometry()->SetIndexToWorldTransformByVtkMatrix(transform->GetMatrix());*/
+	mitk::RenderingManager::GetInstance()->RequestUpdateAll();
+}
+
+void Widget::on_horizontalSlider_rotate_x_valueChanged(int v)
+{
+	auto frontImage = drr(m_image, "", ui->horizontalSlider_scd->value(), v, ui->horizontalSlider_rotate_y->value(), ui->horizontalSlider_rotate_z->value(),ui->horizontalSlider_translate_x->value()
+		, ui->horizontalSlider_translate_y->value(), ui->horizontalSlider_translate_z->value());
+	setImage(1, frontImage);
+	mitk::RenderingManager::GetInstance()->RequestUpdateAll();
+}
+
+void Widget::on_horizontalSlider_rotate_y_valueChanged(int v)
+{
+	auto frontImage = drr(m_image, "", ui->horizontalSlider_scd->value(), ui->horizontalSlider_rotate_x->value(), v,  ui->horizontalSlider_rotate_z->value(), ui->horizontalSlider_translate_x->value()
+		, ui->horizontalSlider_translate_y->value(), ui->horizontalSlider_translate_z->value());
+	setImage(1, frontImage);
+	mitk::RenderingManager::GetInstance()->RequestUpdateAll();
+}
+
+void Widget::on_horizontalSlider_rotate_z_valueChanged(int v)
+{
+	auto frontImage = drr(m_image, "", ui->horizontalSlider_scd->value(), ui->horizontalSlider_rotate_x->value(), ui->horizontalSlider_rotate_y->value(),v , ui->horizontalSlider_translate_x->value()
+		, ui->horizontalSlider_translate_y->value(), ui->horizontalSlider_translate_z->value());
+	setImage(1, frontImage);
 	mitk::RenderingManager::GetInstance()->RequestUpdateAll();
 }

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 project(siddon_gpu LANGUAGES CXX CUDA)
 find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-  message(STATUS "Set up ccache ...")
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif()
+#if(CCACHE_PROGRAM)
+#  message(STATUS "Set up ccache ...")
+#  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+#  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+#endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -28,11 +28,13 @@ include_directories(${GLOG_INCLUDE_DIRS})
 cuda_add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})
+#target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME}
                            PUBLIC
                             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                             $<INSTALL_INTERFACE:include>
-                           )#这种写法是为了解决which is prefixed in the source directory的问题，使用public导出目录使得其它模块
+                           )
+                           #这种写法是为了解决which is prefixed in the source directory的问题，使用public导出目录使得其它模块
                            #或插件通过target_link_libraries可以直接链接到对应的路径
 set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES native)
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Modules")

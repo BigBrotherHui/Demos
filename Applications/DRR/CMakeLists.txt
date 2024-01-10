@@ -3,11 +3,11 @@ project(DRR LANGUAGES CXX CUDA)
 
 
 find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-  message(STATUS "Set up ccache ...")
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif()
+#if(CCACHE_PROGRAM)
+#  message(STATUS "Set up ccache ...")
+#  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+#  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+#endif()
 #include(CheckLanguage)
 #if(NOT CUDAToolkit_FOUND)
 #    include(FindCUDAToolkit)
@@ -23,7 +23,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Concurrent)
 find_package(ITK REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(VTK REQUIRED)
@@ -31,7 +31,7 @@ find_package(MITK 2023.04 REQUIRED)
 # glog
 find_package(Glog REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/ThirdParty)
-#include_directories(${CMAKE_SOURCE_DIR}/Modules/DRR_GPU)
+#include_directories(${CMAKE_SOURCE_DIR}/Modules/DRR_GPU/include)
 
 file(GLOB_RECURSE SOURCE_FILES *.cu *.cpp *.cxx)
 file(GLOB_RECURSE HEADER_FILES *.cuh *.h *.hpp *.hxx)
@@ -71,8 +71,8 @@ else()
 endif()
 add_dependencies(${PROJECT_NAME} siddon_gpu)
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Widgets Qt5::Core ${ITK_LIBRARIES} ${VTK_LIBRARIES}
-MitkCore MitkQtWidgets MitkMapperExt MitkDICOM)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Widgets Qt5::Core Qt5::Concurrent ${ITK_LIBRARIES} ${VTK_LIBRARIES}
+MitkCore MitkQtWidgets MitkMapperExt MitkDICOM MitkGizmo)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>/siddon_gpu.lib)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/ThirdParty/glog/lib/glog.lib)
 

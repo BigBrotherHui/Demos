@@ -353,7 +353,7 @@ bool Cprojection(float *image_3d, float *proj_m, float *_mask,float*GmtrcTrnsfrm
 	CUDAprojection <<< blocks, threads >>> (image_3d, proj_m, _mask, GmtrcTrnsfrmtnMtrx, imageM, imageN, imageH, Pixeld, Pixeldz,projM, projN, Threshold);
 	cudaError_t err = cudaGetLastError();
 	if (err != cudaSuccess) {
-		printf("CUDA Error3: %s\n", cudaGetErrorString(err));
+		printf("CUDA Error4: %s\n", cudaGetErrorString(err));
 		// Possibly: exit(-1) if program cannot continue....
 	}
 	return true;

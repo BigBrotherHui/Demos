@@ -1026,7 +1026,7 @@ int registration(Json::Value& root)
 	return EXIT_SUCCESS;
 }
 
-int main(int argc, char * argv[])
+int _main(int argc, char * argv[])
 {
 	char * file = argv[1];
 

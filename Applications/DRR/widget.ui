@@ -23,11 +23,35 @@
      <widget class="QWidget" name="widget_menu" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QPushButton" name="pushButton_importImage">
-         <property name="text">
-          <string>导入影像</string>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QPushButton" name="pushButton_importImage">
+           <property name="text">
+            <string>导入影像</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_resetView">
+           <property name="text">
+            <string>重置视角</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout">
@@ -38,17 +62,17 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="spinBox_translate_x">
-           <property name="maximum">
-            <number>1111111111</number>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
             <string>X</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Rotate</string>
            </property>
           </widget>
          </item>
@@ -66,17 +90,59 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
-          <widget class="QSpinBox" name="spinBox_translate_y">
+         <item row="2" column="3">
+          <widget class="QSlider" name="horizontalSlider_rotate_x">
            <property name="maximum">
-            <number>1111111111</number>
+            <number>360</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
            </property>
           </widget>
          </item>
-         <item row="4" column="2">
-          <widget class="QSlider" name="horizontalSlider_translate_z">
+         <item row="3" column="3">
+          <widget class="QSlider" name="horizontalSlider_rotate_y">
+           <property name="maximum">
+            <number>360</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="3">
+          <widget class="QSlider" name="horizontalSlider_rotate_z">
+           <property name="maximum">
+            <number>360</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSlider" name="horizontalSlider_translate_x">
            <property name="minimum">
+            <number>-2000</number>
+           </property>
+           <property name="maximum">
+            <number>2000</number>
+           </property>
+           <property name="singleStep">
             <number>100</number>
+           </property>
+           <property name="pageStep">
+            <number>100</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSlider" name="horizontalSlider_translate_y">
+           <property name="minimum">
+            <number>-2000</number>
            </property>
            <property name="maximum">
             <number>2000</number>
@@ -93,42 +159,19 @@
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QSpinBox" name="spinBox_translate_z">
+          <widget class="QSlider" name="horizontalSlider_translate_z">
+           <property name="minimum">
+            <number>-2000</number>
+           </property>
            <property name="maximum">
-            <number>1111111111</number>
+            <number>2000</number>
            </property>
-          </widget>
-         </item>
-         <item row="4" column="3">
-          <widget class="QSpinBox" name="spinBox_rotate_z">
-           <property name="maximum">
-            <number>360</number>
+           <property name="singleStep">
+            <number>100</number>
            </property>
-          </widget>
-         </item>
-         <item row="2" column="3">
-          <widget class="QSpinBox" name="spinBox_rotate_x">
-           <property name="maximum">
-            <number>360</number>
+           <property name="pageStep">
+            <number>100</number>
            </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>Rotate</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="3">
-          <widget class="QSpinBox" name="spinBox_rotate_y">
-           <property name="maximum">
-            <number>360</number>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="4">
-          <widget class="QSlider" name="horizontalSlider_2">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -152,6 +195,36 @@
       </layout>
      </widget>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>scd:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="horizontalSlider_scd">
+       <property name="minimum">
+        <number>100</number>
+       </property>
+       <property name="maximum">
+        <number>2000</number>
+       </property>
+       <property name="singleStep">
+        <number>100</number>
+       </property>
+       <property name="pageStep">
+        <number>100</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
