@@ -11,7 +11,7 @@ public:
 	~SiddonGPU();
 
 	void SetImg3d(const float* _fimg3d, float* _PS, int* _PN);
-	void SetImg2dParameter(float* _PS, int* _PN, float* _mask);
+	void SetImg2dParameter(float* _PS, int* _PN);
 	void SetTransformMatrix(float* _fTransformMatrix);
 	bool Run(float* _fTransformMatrix, float* rst);
 private:
@@ -29,5 +29,6 @@ private:
 	float* m_fImg2dMask4Cude;
 	float m_fThreshold;
 	bool m_bPrepare3d;
+	float* _mask{ nullptr };
 
 };

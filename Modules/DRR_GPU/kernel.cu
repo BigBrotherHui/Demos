@@ -18,9 +18,22 @@ __device__ float dy = 0;
 __device__ float dz = 0;//20
 
 
-void savedata1(const float* rst1, int len, std::string  st)
+void savedata1(const short* rst1, int len, std::string  st)
 {
 	FILE *fpwrt = NULL;
+	const char* file_c = st.c_str();
+	fopen_s(&fpwrt, file_c, "wb+");
+	if (fpwrt == NULL)
+	{
+		std::cout << "error write file" << std::endl;
+	}
+	fwrite(rst1, sizeof(short), len, fpwrt);
+	fclose(fpwrt);
+}
+
+void savedata1(const float* rst1, int len, std::string  st)
+{
+	FILE* fpwrt = NULL;
 	const char* file_c = st.c_str();
 	fopen_s(&fpwrt, file_c, "wb+");
 	if (fpwrt == NULL)
@@ -64,9 +77,12 @@ __global__ void CUDAprojection(float *image_3d, float *proj_m, float* _mask, flo
 	}
 	
 	float py = 0;
+	//image origin
 	float xb = (0 - imageM / 2) * Pixeld + dx, yb = (0 - imageN / 2) * Pixeld + dy, zb = (0 - imageH / 2) * Pixeldz + dz - py;
+	//image isocenter
 	float xe = (imageM - 1 - imageM / 2) * Pixeld + dx, ye = (imageN - 1 - imageN / 2) * Pixeld + dy, ze = (imageH - 1 - imageH / 2) * Pixeldz + dz - py;
 
+	//GmtrcTrnsfrmtnMtrx is transform matrix
 	float t1 = GmtrcTrnsfrmtnMtrx[0] - u * GmtrcTrnsfrmtnMtrx[8];
 	float t2 = GmtrcTrnsfrmtnMtrx[1] - u * GmtrcTrnsfrmtnMtrx[9];
 	float t3 = GmtrcTrnsfrmtnMtrx[4] - v * GmtrcTrnsfrmtnMtrx[8];
@@ -343,7 +359,7 @@ __global__ void CUDAprojection(float *image_3d, float *proj_m, float* _mask, flo
 	}
 }
 
-bool Cprojection(float *image_3d, float *proj_m, float *_mask,float*GmtrcTrnsfrmtnMtrx, int imageM, int imageN, int imageH, float Pixeld, float Pixeldz, int projM, int projN, float Threshold)
+bool Cprojection(float*image_3d, float *proj_m, float *_mask,float*GmtrcTrnsfrmtnMtrx, int imageM, int imageN, int imageH, float Pixeld, float Pixeldz, int projM, int projN, float Threshold)
 {
 	int BlockSize = 128;
 	dim3 threads(BlockSize);
@@ -373,6 +389,10 @@ SiddonGPU::~SiddonGPU()
 	cudaFree(m_fImg2dMask4Cude);
 	delete m_lImg3dPixelNumber;
 	delete m_fImg3dPixelSpacing;
+	if(_mask)
+	{
+		delete _mask;
+	}
 }
 
 
@@ -391,8 +411,8 @@ void SiddonGPU::SetImg3d(const float* _fimg3d, float* _PS, int* _PN)
 
 	int64_t len = m_lImg3dPixelNumber[0] * m_lImg3dPixelNumber[1] * m_lImg3dPixelNumber[2];
     m_fImg3d4Cuda = new float[len];
-	cudaMalloc((void**)&m_fImg3d4Cuda, sizeof(float) * len);
-	cudaMemcpy(m_fImg3d4Cuda, _fimg3d, sizeof(float) * len, cudaMemcpyHostToDevice);
+	cudaMalloc((void**)&m_fImg3d4Cuda, sizeof(short) * len);
+	cudaMemcpy(m_fImg3d4Cuda, _fimg3d, sizeof(short) * len, cudaMemcpyHostToDevice);
 
 	//savedata1(_fimg3d, len, "ct.raw");
 
@@ -404,7 +424,7 @@ void SiddonGPU::SetImg3d(const float* _fimg3d, float* _PS, int* _PN)
 	m_bPrepare3d = true;
 }
 
-void SiddonGPU::SetImg2dParameter(float* _PS, int* _PN,float* _mask)
+void SiddonGPU::SetImg2dParameter(float* _PS, int* _PN)
 {
 	m_lImg2dPixelSpacing = new float[2];
 	memset(m_lImg2dPixelSpacing, 0, 2 * sizeof(float));
@@ -421,6 +441,8 @@ void SiddonGPU::SetImg2dParameter(float* _PS, int* _PN,float* _mask)
 
 	m_fImg2dMask4Cude = new float[len];
 
+	if (!_mask)
+		_mask = new float[len];
 	cudaMalloc((void**)&m_fImg2dMask4Cude, sizeof(float) * len);
 	cudaMemcpy(m_fImg2dMask4Cude, _mask, sizeof(float) * len, cudaMemcpyHostToDevice);
 
@@ -433,7 +455,7 @@ void SiddonGPU::SetImg2dParameter(float* _PS, int* _PN,float* _mask)
 
 void SiddonGPU::SetTransformMatrix(float* _fTransformMatrix)
 {
-	m_fTransformMatrix = new float[12];
+	m_fTransformMatrix = new float[12]{0};
 	cudaMalloc((void**)&m_fTransformMatrix, sizeof(float) * 12);
 	cudaMemcpy(m_fTransformMatrix, _fTransformMatrix, sizeof(float) * 12, cudaMemcpyHostToDevice);
 	cudaError_t error = cudaGetLastError();
@@ -449,13 +471,12 @@ bool SiddonGPU::Run(float* _fTransformMatrix,float* rst)
 	//dim3 threads(BlockSize);
 	//int GridSize = m_lImg2dPixelNumber[0] * m_lImg2dPixelNumber[1] / BlockSize;
 	//dim3 blocks(GridSize);
-
 	cudaMemcpy(m_fTransformMatrix, _fTransformMatrix, sizeof(float) * 12, cudaMemcpyHostToDevice);
 	//cudaError_t error = cudaGetLastError();
 	//printf("CUDA error: %s\n", cudaGetErrorString(error));
 	int len = m_lImg2dPixelNumber[0] * m_lImg2dPixelNumber[1];
 	cudaMemset((void*)m_fImg2d, 0, sizeof(float) * len);
-	Cprojection(m_fImg3d4Cuda, m_fImg2d, m_fImg2dMask4Cude,m_fTransformMatrix, m_lImg3dPixelNumber[1], m_lImg3dPixelNumber[0], m_lImg3dPixelNumber[2], m_fImg3dPixelSpacing[0], m_fImg3dPixelSpacing[2],m_lImg2dPixelNumber[0], m_lImg2dPixelNumber[1], m_fThreshold);
+	Cprojection(m_fImg3d4Cuda, m_fImg2d, m_fImg2dMask4Cude, m_fTransformMatrix, m_lImg3dPixelNumber[1], m_lImg3dPixelNumber[0], m_lImg3dPixelNumber[2], m_fImg3dPixelSpacing[0], m_fImg3dPixelSpacing[2], m_lImg2dPixelNumber[0], m_lImg2dPixelNumber[1], m_fThreshold);
 	cudaMemcpy(rst, m_fImg2d, sizeof(float) * len, cudaMemcpyDeviceToHost);
 	return true;
 }

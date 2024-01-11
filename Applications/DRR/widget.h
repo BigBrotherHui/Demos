@@ -8,6 +8,7 @@
 #include <mitkDisplayActionEventHandler.h>
 #include <itkImage.h>
 #include <vtkPolyData.h>
+#include "kernel.cuh"
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
 QT_END_NAMESPACE
@@ -51,5 +52,6 @@ private:
     double isocenter[3];
     vtkSmartPointer<vtkActor> m_actor_farplane;
     //vtkSmartPointer<vtkActor> actorfrustum;
+    SiddonGPU* siddon{nullptr};
 };
 

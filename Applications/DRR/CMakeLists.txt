@@ -30,8 +30,9 @@ find_package(VTK REQUIRED)
 find_package(MITK 2023.04 REQUIRED)
 # glog
 find_package(Glog REQUIRED)
+find_package(OpenCV REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/ThirdParty)
-#include_directories(${CMAKE_SOURCE_DIR}/Modules/DRR_GPU/include)
+include_directories(${CMAKE_SOURCE_DIR}/Modules/DRR_GPU/include)
 
 file(GLOB_RECURSE SOURCE_FILES *.cu *.cpp *.cxx)
 file(GLOB_RECURSE HEADER_FILES *.cuh *.h *.hpp *.hxx)
@@ -72,7 +73,7 @@ endif()
 add_dependencies(${PROJECT_NAME} siddon_gpu)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Widgets Qt5::Core Qt5::Concurrent ${ITK_LIBRARIES} ${VTK_LIBRARIES}
-MitkCore MitkQtWidgets MitkMapperExt MitkDICOM MitkGizmo)
+MitkCore MitkQtWidgets MitkMapperExt MitkDICOM MitkGizmo ${OpenCV_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>/siddon_gpu.lib)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/ThirdParty/glog/lib/glog.lib)
 

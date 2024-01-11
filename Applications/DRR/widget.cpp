@@ -45,7 +45,8 @@
 #include <vtkTexture.h>
 #include <vtkNamedColors.h>
 #include <vtkPlanes.h>
-
+#include "generatematrixhelper.h"
+#include <opencv2/opencv.hpp>
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
@@ -90,11 +91,17 @@ Widget::Widget(QWidget *parent)
 	l->setStretchFactor(m_lw, 1);
 	l->setStretchFactor(m_renderwindow2dfront, 5);
 	l->setStretchFactor(m_renderwindow2dside, 5);
+
+	siddon = new SiddonGPU;
 }
 
 Widget::~Widget()
 {
     delete ui;
+	if(siddon)
+	{
+		delete siddon;
+	}
 }
 
 void Widget::levelWindowChanged(const mitk::LevelWindow& levelWindow)
@@ -319,6 +326,19 @@ void Widget::addPoint(double* pt)
 
 }
 
+void savedata(const float* rst1, int len, std::string  st)
+{
+	FILE* fpwrt = NULL;
+	const char* file_c = st.c_str();
+	fopen_s(&fpwrt, file_c, "wb+");
+	if (fpwrt == NULL)
+	{
+		std::cout << "error write file" << std::endl;
+	}
+	fwrite(rst1, sizeof(float), len, fpwrt);
+	fclose(fpwrt);
+}
+
 void Widget::on_pushButton_importImage_clicked()
 {
     QString dir=QFileDialog::getExistingDirectory(this, "选择图像序列", "D:/Images/");
@@ -345,6 +365,55 @@ void Widget::on_pushButton_importImage_clicked()
 	try {
 		reader->Update();
 		m_image = reader->GetOutput();
+		double origin[3]{ 0, 0, 0 };
+		m_image->SetOrigin(origin);
+		float spacing[3];
+		int sz[3];
+		for(int i=0;i<3;++i)
+		{
+			spacing[i] = m_image->GetSpacing()[i];
+			sz[i] = m_image->GetLargestPossibleRegion().GetSize()[i];
+		}
+		siddon->SetImg3d((float *)m_image->GetBufferPointer(), spacing, sz);
+		float spacing2d[2]{ .5,.5 };
+		int imageSize[2]{ 512,512 };
+		siddon->SetImg2dParameter(spacing2d, imageSize);
+		float tmp[12]{ 0 };
+		siddon->SetTransformMatrix(tmp);
+		float *result = new float[imageSize[0]* imageSize[1]] {0.0};
+		float transformMatrixFront[12];
+		GenerateMatrixHelper *MatrixHelper = new GenerateMatrixHelper;
+		MatrixHelper->generateEulerTransform(0,0,0,0,0,0);
+		float center2Image[3]{ 3.17383,25.3906,-66.25 };
+		MatrixHelper->setCenterOffset(center2Image);
+		MatrixHelper->setPixelSpacing(spacing);
+		MatrixHelper->setFocalDistance(5042.04 * .5);//
+		MatrixHelper->setImageSize(imageSize);
+		Eigen::Matrix4f s12s2;
+		s12s2 <<
+			0.032626, 0.999462, 0.003303, 532.622380,
+			-0.999457, 0.032611, 0.004761, 726.239285,
+			0.004651, -0.003456, 0.999983, -0.029465,
+			0.000000, 0.000000, 0.000000, 1.000000;
+
+		MatrixHelper->setMatrixS1toS2(s12s2.data());
+		MatrixHelper->getTransformMatrix(true, transformMatrixFront);
+
+		siddon->Run(transformMatrixFront,result);
+		int width=512,height=512;
+		float minVal = *std::min_element(result, result + width * height);
+		float maxVal = *std::max_element(result, result + width * height);
+		cv::Mat grayImage(512, 512, CV_16UC1);
+		for (int i = 0; i < width; ++i) {
+			for (int j = 0; j < height; ++j) {
+				grayImage.at<ushort>(i, j) =4095*( static_cast<ushort>(width *i+j)-minVal)/(maxVal-minVal);
+			}
+		}
+		cv::imshow("output", grayImage);
+		delete result;
+		result = nullptr;
+		delete MatrixHelper;
+		MatrixHelper = nullptr;
 	}
 	catch (itk::ExceptionObject& err)
 	{
