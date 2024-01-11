@@ -17,7 +17,7 @@ QWidget* PluginExample::createWidget()
 {
 	
 	if(!m_widget)
-		m_widget = new QWidget;
+		m_widget = new Widget;
 	/*Eigen::MatrixX3d points;
 	points.resize(8, 3);
 	points.row(0) << 1, 0, 0;

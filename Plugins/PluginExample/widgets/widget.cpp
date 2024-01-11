@@ -11,7 +11,20 @@
 #include "cereal/archives/xml.hpp"
 #include <fstream>
 #include <random>
-
+#include <vtkSTLReader.h>
+#include <vtkPlaneSource.h>
+#include <vtkLinearExtrusionFilter.h>
+#include <vtkCollisionDetectionFilter.h>
+#include <vtkSphereSource.h>
+#include <mitkVtkScalarModeProperty.h>
+#include <vtkPolyLine.h>
+#include <vtkStripper.h>
+#include <vtkPolygon.h>
+#include <vtkTriangleFilter.h>
+#include <vtkIntersectionPolyDataFilter.h>
+#include <vtkCutter.h>
+#include <vtkPlane.h>
+#include <vtkCleanPolyData.h>
 using namespace std;
 namespace
 {
@@ -247,8 +260,8 @@ Widget::Widget(QWidget *parent)
     }
     QVBoxLayout* l = new QVBoxLayout(this);
     m_rw = new QmitkRenderWindow(this);
-    m_rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
-    m_rw->GetRenderer()->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Coronal);
+    m_rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
+    //m_rw->GetRenderer()->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Coronal);
     m_ds = mitk::StandaloneDataStorage::New();
     m_rw->GetRenderer()->SetDataStorage(m_ds);
     m_DisplayActionEventBroadcast = mitk::DisplayActionEventBroadcast::New();
@@ -265,6 +278,98 @@ Widget::Widget(QWidget *parent)
     generateSphere(dataNum);
     bspCurve(bcP, *curveDataPoints, bType);
     bspSurface(bsP, bsQ, *surfaceDataPoints, uType, vType);
+
+
+    vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
+    reader->SetFileName("D:\\kasystem\\build\\bin\\x64\\Release\\prosthesisdata\\MeshSTL\\Femur_left.stl");
+    reader->Update();
+
+    mitk::Surface::Pointer sur = mitk::Surface::New();
+    sur->SetVtkPolyData(reader->GetOutput());
+
+    mitk::DataNode::Pointer node = mitk::DataNode::New();
+    node->SetData(sur);
+    //node->SetBoolProperty("scalar visibility", 1);
+    //mitk::VtkScalarModeProperty::Pointer scalarMode2 = mitk::VtkScalarModeProperty::New();
+    //scalarMode2->SetScalarModeToCellData();
+    //node->SetProperty("scalar mode", scalarMode2);
+    node->SetName("femur");
+    node->SetProperty("layer", mitk::IntProperty::New(9));
+    //addNode(node);
+
+    vtkNew<vtkPlaneSource> sp;
+    Eigen::Vector3d tcutpoint{reader->GetOutput()->GetCenter()};
+    sp->SetOrigin(Eigen::Vector3d(tcutpoint + 200 * Eigen::Vector3d::UnitX()).data());
+    sp->SetPoint1(Eigen::Vector3d(tcutpoint - 200 * Eigen::Vector3d::UnitX()).data());
+    sp->SetPoint2(Eigen::Vector3d(tcutpoint - 100 * Eigen::Vector3d::UnitY()).data());
+    //sp->SetXResolution(100);
+    //sp->SetYResolution(100);
+    sp->Update();
+   /* vtkSmartPointer<vtkLinearExtrusionFilter> ll = vtkSmartPointer<vtkLinearExtrusionFilter>::New();
+    ll->SetInputData(sp->GetOutput());
+    ll->SetExtrusionTypeToNormalExtrusion();
+    ll->SetVector(0, 0, 1);
+    ll->Update();*/
+    vtkSmartPointer<vtkPlane> plane1 = vtkSmartPointer<vtkPlane>::New();
+    plane1->SetOrigin(Eigen::Vector3d(tcutpoint + 200 * Eigen::Vector3d::UnitX()).data());
+    plane1->SetNormal(sp->GetNormal());
+    vtkSmartPointer<vtkCutter> c1 = vtkSmartPointer<vtkCutter>::New();
+    c1->SetInputData(reader->GetOutput());
+    c1->SetCutFunction(plane1);
+    c1->Update();
+
+    mitk::Surface::Pointer sur2 = mitk::Surface::New();
+    sur2->SetVtkPolyData(c1->GetOutput());
+    //sur2->SetVtkPolyData(ll->GetOutput());
+    mitk::DataNode::Pointer node2 = mitk::DataNode::New();
+    node2->SetData(sur2);
+    node2->SetProperty("layer", mitk::IntProperty::New(10));
+    node2->SetName("plane");
+    node2->SetColor(0, 1, 0);
+    node2->SetFloatProperty("material.wireframeLineWidth", 10);
+    //node2->SetBoolProperty("scalar visibility", 1);
+    //mitk::VtkScalarModeProperty::Pointer scalarMode = mitk::VtkScalarModeProperty::New();
+    //scalarMode->SetScalarModeToCellData();
+    //node2->SetProperty("scalar mode", scalarMode);
+    addNode(node2);
+
+ //   vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
+ //   cutter->SetInputData(inputdata);
+ //   cutter->SetCutFunction(plane);
+ //   cutter->Update();
+ //   vtkSmartPointer<vtkStripper> stripper = vtkSmartPointer<vtkStripper>::New();
+ //   stripper->SetInputData(cutter->GetOutput());
+ //   stripper->Update();
+ //   vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+ //   polydata->DeepCopy(stripper->GetOutput());
+ //   polydata->SetLines(stripper->GetOutput()->GetLines());
+ //   vtkSmartPointer<vtkTriangleFilter > triangle = vtkSmartPointer<vtkTriangleFilter>::New();
+ //   triangle->SetInputData(polydata);
+ //   triangle->Update();
+
+ //   //如果为非封闭体，就需要判断stripper结果GetLines()中单元的属性，如果单元的首节点与尾节点的序号一致，
+	////才认为是封闭的多边形，否则就是非封闭的多义线，不能直接加入到Polys中，仍然要加载在Lines单元中。
+ //   vtkSmartPointer<vtkCellArray> polyAry = vtkSmartPointer<vtkCellArray>::New();
+ //   vtkSmartPointer<vtkCellArray> lineAry = vtkSmartPointer<vtkCellArray>::New();
+ //   for (int i = 0; i < stripper->GetOutput()->GetNumberOfCells(); i++)
+ //   {
+ //       vtkCell *cell = stripper->GetOutput()->GetCell(i);
+ //       if (cell->GetNumberOfPoints() > 0)
+ //       {
+ //           int iId = cell->GetPointId(0);
+ //           int iId1 = cell->GetPointId(cell->GetNumberOfPoints() - 1);
+ //           if (iId != iId1)
+ //           {
+ //               lineAry->InsertNextCell(cell);
+ //           }
+ //           else
+ //           {
+ //               polyAry->InsertNextCell(cell);
+ //           }
+ //       }
+ //   }
+ //   polydata->SetLines(lineAry);
+ //   polydata->SetPolys(polyAry);
 }
 
 Widget::~Widget()
