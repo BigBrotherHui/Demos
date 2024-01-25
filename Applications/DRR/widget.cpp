@@ -47,6 +47,8 @@
 #include <vtkPlanes.h>
 #include "generatematrixhelper.h"
 #include <opencv2/opencv.hpp>
+#include <vtkPoints.h>
+#include <vtkLine.h>
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
@@ -82,7 +84,7 @@ Widget::Widget(QWidget *parent)
     l->addWidget(m_renderwindow);
 	m_lw= new QmitkLevelWindowWidget(this);
 	m_lw->SetDataStorage(m_data_storage_);
-	m_lw->GetManager()->LevelWindowChanged.AddListener(mitk::MessageDelegate1<Widget, const mitk::LevelWindow&>(this, &Widget::levelWindowChanged));
+	//m_lw->GetManager()->LevelWindowChanged.AddListener(mitk::MessageDelegate1<Widget, const mitk::LevelWindow&>(this, &Widget::levelWindowChanged));
 	l->addWidget(m_lw);
 	l->addWidget(m_renderwindow2dfront);
 	//l->addWidget(m_renderwindow2dside);
@@ -91,6 +93,27 @@ Widget::Widget(QWidget *parent)
 	l->setStretchFactor(m_lw, 1);
 	l->setStretchFactor(m_renderwindow2dfront, 5);
 	l->setStretchFactor(m_renderwindow2dside, 5);
+
+	auto points = vtkSmartPointer<vtkPoints>::New();
+	auto polydata = vtkSmartPointer<vtkPolyData>::New();
+	auto cells = vtkSmartPointer<vtkCellArray>::New();
+	for (int i = 0; i < 10; ++i) {
+		points->InsertNextPoint(i * 3, i * 3, i * 3);
+		if (i % 2) {
+			vtkSmartPointer<vtkLine> line = vtkSmartPointer<vtkLine>::New();
+			line->GetPointIds()->SetId(0, i - 1);
+			line->GetPointIds()->SetId(1, i);
+			cells->InsertNextCell(line);
+		}
+	}
+	polydata->SetPoints(points);
+	polydata->SetLines(cells);
+	mitk::DataNode::Pointer dd = mitk::DataNode::New();
+	mitk::Surface::Pointer pp = mitk::Surface::New();
+	pp->SetVtkPolyData(polydata);
+	dd->SetData(pp);
+	m_data_storage_->Add(dd);
+
 
 	siddon = new SiddonGPU;
 }

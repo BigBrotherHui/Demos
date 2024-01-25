@@ -25,6 +25,9 @@
 #include <vtkCutter.h>
 #include <vtkPlane.h>
 #include <vtkCleanPolyData.h>
+#include <vtkPoints.h>
+#include <vtkLine.h>
+#include <mitkVtkRepresentationProperty.h>
 using namespace std;
 namespace
 {
@@ -236,7 +239,7 @@ void bspSurface(int p,
 Widget::Widget(QWidget *parent)
     : WidgetBase(parent)
 {
-    PT a;
+    /*PT a;
     a.x = 100;
     a.y = 121;
     {
@@ -257,7 +260,7 @@ Widget::Widget(QWidget *parent)
     }catch(exception &e)
     {
         qDebug() << "error:" << QString::fromStdString(e.what());
-    }
+    }*/
     QVBoxLayout* l = new QVBoxLayout(this);
     m_rw = new QmitkRenderWindow(this);
     m_rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
@@ -274,13 +277,13 @@ Widget::Widget(QWidget *parent)
     l->addWidget(m_rw);
     l->setContentsMargins(0, 0, 0, 0);
 
-    generateCircle(dataNum);
+    /*generateCircle(dataNum);
     generateSphere(dataNum);
     bspCurve(bcP, *curveDataPoints, bType);
-    bspSurface(bsP, bsQ, *surfaceDataPoints, uType, vType);
+    bspSurface(bsP, bsQ, *surfaceDataPoints, uType, vType);*/
 
 
-    vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
+    /*vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
     reader->SetFileName("D:\\kasystem\\build\\bin\\x64\\Release\\prosthesisdata\\MeshSTL\\Femur_left.stl");
     reader->Update();
 
@@ -288,29 +291,29 @@ Widget::Widget(QWidget *parent)
     sur->SetVtkPolyData(reader->GetOutput());
 
     mitk::DataNode::Pointer node = mitk::DataNode::New();
-    node->SetData(sur);
+    node->SetData(sur);*/
     //node->SetBoolProperty("scalar visibility", 1);
     //mitk::VtkScalarModeProperty::Pointer scalarMode2 = mitk::VtkScalarModeProperty::New();
     //scalarMode2->SetScalarModeToCellData();
     //node->SetProperty("scalar mode", scalarMode2);
-    node->SetName("femur");
-    node->SetProperty("layer", mitk::IntProperty::New(9));
+    /*node->SetName("femur");
+    node->SetProperty("layer", mitk::IntProperty::New(9));*/
     //addNode(node);
 
-    vtkNew<vtkPlaneSource> sp;
+    /*vtkNew<vtkPlaneSource> sp;
     Eigen::Vector3d tcutpoint{reader->GetOutput()->GetCenter()};
     sp->SetOrigin(Eigen::Vector3d(tcutpoint + 200 * Eigen::Vector3d::UnitX()).data());
     sp->SetPoint1(Eigen::Vector3d(tcutpoint - 200 * Eigen::Vector3d::UnitX()).data());
-    sp->SetPoint2(Eigen::Vector3d(tcutpoint - 100 * Eigen::Vector3d::UnitY()).data());
+    sp->SetPoint2(Eigen::Vector3d(tcutpoint - 100 * Eigen::Vector3d::UnitY()).data());*/
     //sp->SetXResolution(100);
     //sp->SetYResolution(100);
-    sp->Update();
+    //sp->Update();
    /* vtkSmartPointer<vtkLinearExtrusionFilter> ll = vtkSmartPointer<vtkLinearExtrusionFilter>::New();
     ll->SetInputData(sp->GetOutput());
     ll->SetExtrusionTypeToNormalExtrusion();
     ll->SetVector(0, 0, 1);
     ll->Update();*/
-    vtkSmartPointer<vtkPlane> plane1 = vtkSmartPointer<vtkPlane>::New();
+    /*vtkSmartPointer<vtkPlane> plane1 = vtkSmartPointer<vtkPlane>::New();
     plane1->SetOrigin(Eigen::Vector3d(tcutpoint + 200 * Eigen::Vector3d::UnitX()).data());
     plane1->SetNormal(sp->GetNormal());
     vtkSmartPointer<vtkCutter> c1 = vtkSmartPointer<vtkCutter>::New();
@@ -319,19 +322,19 @@ Widget::Widget(QWidget *parent)
     c1->Update();
 
     mitk::Surface::Pointer sur2 = mitk::Surface::New();
-    sur2->SetVtkPolyData(c1->GetOutput());
+    sur2->SetVtkPolyData(c1->GetOutput());*/
     //sur2->SetVtkPolyData(ll->GetOutput());
-    mitk::DataNode::Pointer node2 = mitk::DataNode::New();
-    node2->SetData(sur2);
-    node2->SetProperty("layer", mitk::IntProperty::New(10));
-    node2->SetName("plane");
-    node2->SetColor(0, 1, 0);
-    node2->SetFloatProperty("material.wireframeLineWidth", 10);
+    //mitk::DataNode::Pointer node2 = mitk::DataNode::New();
+    //node2->SetData(sur2);
+    //node2->SetProperty("layer", mitk::IntProperty::New(10));
+    //node2->SetName("plane");
+    //node2->SetColor(0, 1, 0);
+    //node2->SetFloatProperty("material.wireframeLineWidth", 10);
     //node2->SetBoolProperty("scalar visibility", 1);
     //mitk::VtkScalarModeProperty::Pointer scalarMode = mitk::VtkScalarModeProperty::New();
     //scalarMode->SetScalarModeToCellData();
     //node2->SetProperty("scalar mode", scalarMode);
-    addNode(node2);
+    //addNode(node2);
 
  //   vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
  //   cutter->SetInputData(inputdata);
@@ -370,6 +373,29 @@ Widget::Widget(QWidget *parent)
  //   }
  //   polydata->SetLines(lineAry);
  //   polydata->SetPolys(polyAry);
+    auto points = vtkSmartPointer<vtkPoints>::New();
+    auto polydata = vtkSmartPointer<vtkPolyData>::New();
+    auto cells = vtkSmartPointer<vtkCellArray>::New();
+    for (int i = 0; i < 10; ++i) {
+        points->InsertNextPoint(i * 3, i * 3, i * 3);
+        if (i % 2) {
+            vtkSmartPointer<vtkLine> line = vtkSmartPointer<vtkLine>::New();
+            line->GetPointIds()->SetId(0, i - 1);
+            line->GetPointIds()->SetId(1, i);
+            cells->InsertNextCell(line);
+        }
+    }
+    polydata->SetPoints(points);
+    polydata->SetLines(cells);
+    mitk::DataNode::Pointer dd = mitk::DataNode::New();
+    mitk::Surface::Pointer pp = mitk::Surface::New();
+    pp->SetVtkPolyData(polydata);
+    dd->SetData(pp);
+    auto rep = mitk::VtkRepresentationProperty::New();
+    rep->SetRepresentationToWireframe();
+    dd->SetProperty("material.representation", rep);
+    dd->SetProperty("material.wireframeLineWidth",mitk::FloatProperty::New(10));
+    addNode(dd);
 }
 
 Widget::~Widget()
