@@ -393,10 +393,10 @@ Widget::Widget(QWidget *parent)
     /*l->addWidget(m_rw);
     l->setContentsMargins(0, 0, 0, 0);*/
 
-    generateCircle(dataNum);
+    /*generateCircle(dataNum);
     generateSphere(dataNum);
     bspCurve(bcP, *curveDataPoints, bType);
-    bspSurface(bsP, bsQ, *surfaceDataPoints, uType, vType);
+    bspSurface(bsP, bsQ, *surfaceDataPoints, uType, vType);*/
 
 
     vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
@@ -630,6 +630,29 @@ Widget::Widget(QWidget *parent)
  //   }
  //   polydata->SetLines(lineAry);
  //   polydata->SetPolys(polyAry);
+    auto points = vtkSmartPointer<vtkPoints>::New();
+    auto polydata = vtkSmartPointer<vtkPolyData>::New();
+    auto cells = vtkSmartPointer<vtkCellArray>::New();
+    for (int i = 0; i < 10; ++i) {
+        points->InsertNextPoint(i * 3, i * 3, i * 3);
+        if (i % 2) {
+            vtkSmartPointer<vtkLine> line = vtkSmartPointer<vtkLine>::New();
+            line->GetPointIds()->SetId(0, i - 1);
+            line->GetPointIds()->SetId(1, i);
+            cells->InsertNextCell(line);
+        }
+    }
+    polydata->SetPoints(points);
+    polydata->SetLines(cells);
+    mitk::DataNode::Pointer dd = mitk::DataNode::New();
+    mitk::Surface::Pointer pp = mitk::Surface::New();
+    pp->SetVtkPolyData(polydata);
+    dd->SetData(pp);
+    auto rep = mitk::VtkRepresentationProperty::New();
+    rep->SetRepresentationToWireframe();
+    dd->SetProperty("material.representation", rep);
+    dd->SetProperty("material.wireframeLineWidth",mitk::FloatProperty::New(10));
+    addNode(dd);
 }
 
 void Widget::on_pushButton_clicked()
