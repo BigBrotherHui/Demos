@@ -68,6 +68,7 @@ Widget::Widget(QWidget *parent)
 	m_data_storage_2dside= mitk::StandaloneDataStorage::New();
 	m_data_storage_2dfront = mitk::StandaloneDataStorage::New();
 	m_renderwindow->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
+	//m_renderwindow->GetRenderer()->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Coronal);
 	m_renderwindow->GetRenderer()->SetDataStorage(m_data_storage_);
 	m_renderwindow2dside->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard2D);
 	m_renderwindow2dside->GetSliceNavigationController()->SetDefaultViewDirection(mitk::AnatomicalPlane::Axial);
@@ -121,7 +122,7 @@ void Widget::levelWindowChanged(const mitk::LevelWindow& levelWindow)
 		auto window = levelWindow.GetWindow();
 		auto min = level - window / 2;
 		auto perWindow = window / 8;
-		pNode->SetProperty("volumerendering.usegpu", mitk::BoolProperty::New(false));
+		pNode->SetProperty("volumerendering.usegpu", mitk::BoolProperty::New(1));
 		pNode->SetProperty("volumerendering.usemip", mitk::BoolProperty::New(false));
 		pNode->SetProperty("volumerendering.blendmode", mitk::IntProperty::New(0));  //使用混合形式的投影
 		auto transferFunction = mitk::TransferFunction::New();
@@ -339,13 +340,87 @@ void savedata(const float* rst1, int len, std::string  st)
 	fclose(fpwrt);
 }
 
+itk::Image<float, 3>::Pointer Widget::imageinterpolation(itk::Image<float,3>::Pointer imginput, double isoSpacing)
+{
+	using ImageType = itk::Image<float, 3>;
+	const int Dimension = 3;
+	using ResampleFilterType4Interp =
+		itk::ResampleImageFilter<ImageType, ImageType>;
+	ResampleFilterType4Interp::Pointer resamplerInterp = ResampleFilterType4Interp::New();
+	using TransformType4Interp = itk::IdentityTransform<double, Dimension>;
+	TransformType4Interp::Pointer transform = TransformType4Interp::New();
+	transform->SetIdentity();
+	resamplerInterp->SetTransform(transform);
+	using InterpolatorType4Interp =
+		itk::LinearInterpolateImageFunction<ImageType, double>;
+
+	InterpolatorType4Interp::Pointer interpolator = InterpolatorType4Interp::New();
+	resamplerInterp->SetInterpolator(interpolator);
+	resamplerInterp->SetDefaultPixelValue(0);
+
+	const ImageType::SpacingType& inputSpacing = imginput->GetSpacing();
+	ImageType::SpacingType spacing;
+	spacing[0] = isoSpacing;
+	spacing[1] = isoSpacing;
+	spacing[2] = isoSpacing;
+	resamplerInterp->SetOutputSpacing(spacing);
+	resamplerInterp->SetOutputOrigin(imginput->GetOrigin());
+	resamplerInterp->SetOutputDirection(imginput->GetDirection());
+
+	ImageType::SizeType inputSize =
+		imginput->GetLargestPossibleRegion().GetSize();
+
+	using SizeValueType = ImageType::SizeType::SizeValueType;
+	const double dx = inputSize[0] * inputSpacing[0] / isoSpacing;
+	const double dy = inputSize[1] * inputSpacing[1] / isoSpacing;
+	const double dz = std::floor((inputSize[2]) * inputSpacing[2] / isoSpacing);
+	ImageType::SizeType size;
+
+	size[0] = static_cast<SizeValueType>(dx);
+	size[1] = static_cast<SizeValueType>(dy);
+	size[2] = static_cast<SizeValueType>(dz);
+
+	resamplerInterp->SetSize(size);
+	resamplerInterp->SetInput(imginput);
+
+	try
+	{
+		resamplerInterp->Update();
+	}
+	catch (itk::ExceptionObject& ex)
+	{
+		std::cout << ex << std::endl;
+	}
+	return resamplerInterp->GetOutput();;
+}
+
+void Widget::CT3DNormalization(itk::Image<float, 3>::Pointer img, double dThreshold)
+{
+	using ImageType = itk::Image<float, 3>;
+	ImageType::SizeType inputSizess =
+		img->GetLargestPossibleRegion().GetSize();
+	float* buffer = img->GetBufferPointer();
+	int len = inputSizess[0] * inputSizess[1] * inputSizess[2];
+	for (int i = 0; i < len; ++i)
+	{
+		if (buffer[i] > dThreshold)
+		{
+			buffer[i] = buffer[i] / 1000 - dThreshold / 1000;
+		}
+		else
+		{
+			buffer[i] = 0;
+		}
+	}
+}
+
 void Widget::on_pushButton_importImage_clicked()
 {
     QString dir=QFileDialog::getExistingDirectory(this, "选择图像序列", "D:/Images/");
     if (dir.isEmpty())
         return;
 	using SeriesFileNamesType = itk::GDCMSeriesFileNames;
-	using ImageType = itk::Image<short, 3>;
+	using ImageType = itk::Image<float, 3>;
 	using ReaderType = itk::ImageSeriesReader<ImageType>;
 	using ImageIOType = itk::GDCMImageIO;
 	ImageIOType::Pointer m_gdcmImageIO = ImageIOType::New();
@@ -364,56 +439,67 @@ void Widget::on_pushButton_importImage_clicked()
 	reader->ForceOrthogonalDirectionOff();
 	try {
 		reader->Update();
-		m_image = reader->GetOutput();
-		double origin[3]{ 0, 0, 0 };
-		m_image->SetOrigin(origin);
-		float spacing[3];
-		int sz[3];
-		for(int i=0;i<3;++i)
-		{
-			spacing[i] = m_image->GetSpacing()[i];
-			sz[i] = m_image->GetLargestPossibleRegion().GetSize()[i];
-		}
-		siddon->SetImg3d((float *)m_image->GetBufferPointer(), spacing, sz);
-		float spacing2d[2]{ .5,.5 };
-		int imageSize[2]{ 512,512 };
-		siddon->SetImg2dParameter(spacing2d, imageSize);
-		float tmp[12]{ 0 };
-		siddon->SetTransformMatrix(tmp);
-		float *result = new float[imageSize[0]* imageSize[1]] {0.0};
-		float transformMatrixFront[12];
-		GenerateMatrixHelper *MatrixHelper = new GenerateMatrixHelper;
-		MatrixHelper->generateEulerTransform(0,0,0,0,0,0);
-		float center2Image[3]{ 3.17383,25.3906,-66.25 };
-		MatrixHelper->setCenterOffset(center2Image);
-		MatrixHelper->setPixelSpacing(spacing);
-		MatrixHelper->setFocalDistance(5042.04 * .5);//
-		MatrixHelper->setImageSize(imageSize);
-		Eigen::Matrix4f s12s2;
-		s12s2 <<
-			0.032626, 0.999462, 0.003303, 532.622380,
-			-0.999457, 0.032611, 0.004761, 726.239285,
-			0.004651, -0.003456, 0.999983, -0.029465,
-			0.000000, 0.000000, 0.000000, 1.000000;
+		typedef itk::IntensityWindowingImageFilter <ImageType, ImageType> IntensityWindowingImageFilterType;
+		IntensityWindowingImageFilterType::Pointer intensityFilter = IntensityWindowingImageFilterType::New();
+		intensityFilter->SetInput(reader->GetOutput());
+		intensityFilter->SetWindowLevel(1000, 400);//window,level//180,90
+		intensityFilter->SetOutputMinimum(0);
+		intensityFilter->SetOutputMaximum(255);
+		intensityFilter->Update();
+		m_image = intensityFilter->GetOutput();
 
-		MatrixHelper->setMatrixS1toS2(s12s2.data());
-		MatrixHelper->getTransformMatrix(true, transformMatrixFront);
+		//imageinterpolation(m_image, m_image->GetSpacing()[0]);
+		//CT3DNormalization(m_image,100);
+		//double origin[3]{ 0, 0, 0 };
+		//m_image->SetOrigin(origin);
+		//float spacing[3];
+		//int sz[3];
+		//for(int i=0;i<3;++i)
+		//{
+		//	spacing[i] = m_image->GetSpacing()[i];
+		//	sz[i] = m_image->GetLargestPossibleRegion().GetSize()[i];
+		//}
+		//siddon->SetImg3d((float *)m_image->GetBufferPointer(), spacing, sz);
+		//float spacing2d[2]{ .5,.5 };
+		//int imageSize[2]{ 512,512 };
+		//siddon->SetImg2dParameter(spacing2d, imageSize);
+		//float tmp[12]{ 0 };
+		//siddon->SetTransformMatrix(tmp);
+		//float *result = new float[imageSize[0]* imageSize[1]] {0.0};
+		//float transformMatrixFront[12];
+		//GenerateMatrixHelper *MatrixHelper = new GenerateMatrixHelper;
+		//MatrixHelper->generateEulerTransform(0,0,0,0,0,0);
+		//float center2Image[3]{0,0,0};//3.17383,25.3906,-66.25
+		//MatrixHelper->setCenterOffset(center2Image);
+		//MatrixHelper->setPixelSpacing(spacing);
+		//MatrixHelper->setFocalDistance(5042.04 * .5);//
+		//MatrixHelper->setImageSize(imageSize);
+		//Eigen::Matrix4f s12s2;
+		//s12s2 <<
+		//	0.032626, 0.999462, 0.003303, 532.622380,
+		//	-0.999457, 0.032611, 0.004761, 726.239285,
+		//	0.004651, -0.003456, 0.999983, -0.029465,
+		//	0.000000, 0.000000, 0.000000, 1.000000;
 
-		siddon->Run(transformMatrixFront,result);
-		int width=512,height=512;
-		float minVal = *std::min_element(result, result + width * height);
-		float maxVal = *std::max_element(result, result + width * height);
-		cv::Mat grayImage(512, 512, CV_16UC1);
-		for (int i = 0; i < width; ++i) {
-			for (int j = 0; j < height; ++j) {
-				grayImage.at<ushort>(i, j) =4095*( static_cast<ushort>(width *i+j)-minVal)/(maxVal-minVal);
-			}
-		}
-		cv::imshow("output", grayImage);
-		delete result;
-		result = nullptr;
-		delete MatrixHelper;
-		MatrixHelper = nullptr;
+		//Eigen::Matrix4f mt = Eigen::Matrix4f::Identity();
+		//MatrixHelper->setMatrixS1toS2(mt.data());
+		//MatrixHelper->getTransformMatrix(true, transformMatrixFront);
+
+		//siddon->Run(transformMatrixFront,result);
+		//int width=512,height=512;
+		//float minVal = *std::min_element(result, result + width * height);
+		//float maxVal = *std::max_element(result, result + width * height);
+		//cv::Mat grayImage(512, 512, CV_16UC1);
+		//for (int i = 0; i < width; ++i) {
+		//	for (int j = 0; j < height; ++j) {
+		//		grayImage.at<ushort>(i, j) =4095*( static_cast<ushort>(width *i+j)-minVal)/(maxVal-minVal);
+		//	}
+		//}
+		//cv::imshow("output", grayImage);
+		//delete result;
+		//result = nullptr;
+		//delete MatrixHelper;
+		//MatrixHelper = nullptr;
 	}
 	catch (itk::ExceptionObject& err)
 	{
@@ -423,11 +509,11 @@ void Widget::on_pushButton_importImage_clicked()
 	}
 	// image construct of mitk
 	mitk::Image::Pointer mitkImage = mitk::Image::New();
-	mitk::GrabItkImageMemory(reader->GetOutput(), mitkImage);
+	mitk::GrabItkImageMemory(m_image, mitkImage);
 	mitk::DataNode::Pointer dt = mitk::DataNode::New();
-	mitk::Point3D origin;
-	origin[0] = origin[1] = origin[2] = 0;
-	mitkImage->SetOrigin(origin);
+	//mitk::Point3D origin;
+	//origin[0] = origin[1] = origin[2] = 0;
+	//mitkImage->SetOrigin(origin);
 	dt->SetName("image");
 	dt->SetBoolProperty("volumerendering", 1);
 	dt->SetData(mitkImage);

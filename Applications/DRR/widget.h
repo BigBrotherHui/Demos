@@ -24,7 +24,8 @@ protected:
     void setImage(bool front, itk::Image<unsigned char, 3>::Pointer img);
     vtkSmartPointer<vtkPolyData> transformPolyData(vtkSmartPointer<vtkMatrix4x4> mt, vtkSmartPointer<vtkPolyData> p);
     void addPoint(double* pt);
-    ;
+;   itk::Image<float, 3>::Pointer imageinterpolation(itk::Image<float, 3>::Pointer imginput, double isoSpacing);
+    void CT3DNormalization(itk::Image<float, 3>::Pointer img, double dThreshold);
 private slots:
     void on_pushButton_importImage_clicked();
     void on_pushButton_resetView_clicked();
@@ -48,7 +49,7 @@ private:
     QmitkLevelWindowWidget* m_lw;
     mitk::DisplayActionEventBroadcast::Pointer m_DisplayActionEventBroadcast;
     std::unique_ptr<mitk::DisplayActionEventHandler> m_DisplayActionEventHandler;
-    itk::Image<short, 3>::Pointer m_image;
+    itk::Image<float, 3>::Pointer m_image;
     double isocenter[3];
     vtkSmartPointer<vtkActor> m_actor_farplane;
     //vtkSmartPointer<vtkActor> actorfrustum;

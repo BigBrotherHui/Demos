@@ -2,15 +2,15 @@
 #include "generatematrixhelper.h"
 #include <vtkMatrix4x4.h>
 #include <QDebug>
-void copyArray(float *src,float *dst,size_t size)
+void copyArray(float* src, float* dst, size_t size)
 {
-    for(size_t i=0;i<size;i++)
+    for (size_t i = 0; i < size; i++)
     {
-        dst[i]=src[i];
+        dst[i] = src[i];
     }
 }
 
-void  GenerateMatrixHelper::generateTransformMatrix(float *M)
+void  GenerateMatrixHelper::generateTransformMatrix(float* M)
 {
     float cs = imageSize[0] / 2 + 0.001; //竖直改变，取projM 中间值
     float ls = imageSize[1] / 2 + 0.001; //水平改变，取projN 中间值
@@ -37,8 +37,26 @@ void  GenerateMatrixHelper::generateTransformMatrix(float *M)
     P[2][1] = 0.0;
     P[2][2] = 0.0;
 
-    Eigen::Matrix4f mt = Eigen::Matrix4f::Identity();
-    float *Rs1tos2=mt.data();
+    float Rs1tos2[4][4]{};
+    if (!isFront) //判定正侧位
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                int ind = i * 4 + j;
+                Rs1tos2[i][j] = mtS1ToS2[ind];
+            }
+
+        }
+    }
+    else
+    {
+        Rs1tos2[0][0] = 1;
+        Rs1tos2[1][1] = 1;
+        Rs1tos2[2][2] = 1;
+        Rs1tos2[3][3] = 1;
+    }
 
     TransformType::MatrixType R = m_Transform->GetMatrix();  //旋转变换矩阵
     float R2[4][4]{};
@@ -110,7 +128,7 @@ void  GenerateMatrixHelper::generateTransformMatrix(float *M)
         {
             M2[i][j] = 0;
             for (int k = 0; k < 4; k++)
-                M2[i][j] += Rs1tos2[i*4+k] * M1[k][j];
+                M2[i][j] += Rs1tos2[i][k] * M1[k][j];
         }
     }
 
@@ -121,13 +139,8 @@ void  GenerateMatrixHelper::generateTransformMatrix(float *M)
         {
             ind = i * 4 + j;
             M[ind] = 0;
-            /*for (int k = 0; k < 3; k++)
-                M[ind] += P[i][k] * M2[k][j];*/
-            if (ind == 11)
-                M[ind] = 1000;
-            else if (i == j)
-                M[ind] = 1;
-            else M[ind] = 0;
+            for (int k = 0; k < 3; k++)
+                M[ind] += P[i][k] * M2[k][j];
         }
     }
 }
@@ -137,55 +150,55 @@ GenerateMatrixHelper::~GenerateMatrixHelper()
 
 }
 
-void GenerateMatrixHelper::getTransformMatrix(bool isfront,float *M)
+void GenerateMatrixHelper::getTransformMatrix(bool isfront, float* M)
 {
-    this->isFront=isfront;
+    this->isFront = isfront;
     generateTransformMatrix(M);
 }
 
-void GenerateMatrixHelper::setCenterOffset(float *centeroffset)
+void GenerateMatrixHelper::setCenterOffset(float* centeroffset)
 {
-    for(size_t i=0;i<3;i++)
+    for (size_t i = 0; i < 3; i++)
     {
-            centerOffset[i]=centeroffset[i];
+        centerOffset[i] = centeroffset[i];
     }
 }
 
 void GenerateMatrixHelper::setFocalDistance(float focaldistance)
 {
-    focalDistance=focaldistance;
+    focalDistance = focaldistance;
 }
 
-void GenerateMatrixHelper::setImageSize(int *imagesize)
+void GenerateMatrixHelper::setImageSize(int* imagesize)
 {
-    imageSize[0]=imagesize[0];
-    imageSize[1]=imagesize[1];
+    imageSize[0] = imagesize[0];
+    imageSize[1] = imagesize[1];
 }
 
-void GenerateMatrixHelper::setPixelSpacing(float *pixelspacing)
+void GenerateMatrixHelper::setPixelSpacing(float* pixelspacing)
 {
-    pixelSpacing[0]=pixelspacing[0];
-    pixelSpacing[1]=pixelspacing[1];
+    pixelSpacing[0] = pixelspacing[0];
+    pixelSpacing[1] = pixelspacing[1];
 }
 
-void GenerateMatrixHelper::setMatrixS1toS2(float *matrix)
+void GenerateMatrixHelper::setMatrixS1toS2(float* matrix)
 {
-    memcpy(mtS1ToS2,matrix,sizeof (float)*16);
+    memcpy(mtS1ToS2, matrix, sizeof(float) * 16);
 }
 
 void GenerateMatrixHelper::generateEulerTransform(double rotateX, double rotateY, double rotateZ, double transX, double transY, double transZ)
 {
-    itk::Vector<double,3> vecTranslation;
-    vecTranslation.SetElement(0,transX);
-    vecTranslation.SetElement(1,transY);
-    vecTranslation.SetElement(2,transZ);
+    itk::Vector<double, 3> vecTranslation;
+    vecTranslation.SetElement(0, transX);
+    vecTranslation.SetElement(1, transY);
+    vecTranslation.SetElement(2, transZ);
     m_Transform->SetTranslation(vecTranslation);
     const double dtr = (atan(1.0) * 4.0) / 180.0;
-    m_Transform->SetRotation(dtr*rotateX,dtr*rotateY,dtr*rotateZ);
+    m_Transform->SetRotation(dtr * rotateX, dtr * rotateY, dtr * rotateZ);
 }
 
 GenerateMatrixHelper::GenerateMatrixHelper()
 {
-    m_Transform=itk::Euler3DTransform<float>::New();
+    m_Transform = itk::Euler3DTransform<float>::New();
     m_Transform->SetComputeZYX(1);
 }
