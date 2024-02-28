@@ -39,6 +39,8 @@
 #include <vtkTriangle.h>
 #include <vtkAppendPolyData.h>
 #include <vtkDelaunay2D.h>
+#include <mitkVtkRepresentationProperty.h>
+#include <vtkLine.h>
 using namespace std;
 namespace
 {
@@ -376,7 +378,7 @@ Widget::Widget(QWidget *parent)
     {
         qDebug() << "error:" << QString::fromStdString(e.what());
     }
-    //QVBoxLayout* l = new QVBoxLayout(ui->widget);
+    QVBoxLayout* l = new QVBoxLayout(ui->widget);
     m_rw = new QmitkRenderWindow();
     m_rw->show();
     m_rw->GetRenderer()->SetMapperID(mitk::BaseRenderer::Standard3D);
@@ -390,8 +392,8 @@ Widget::Widget(QWidget *parent)
     m_DisplayActionEventHandler = std::make_unique<mitk::DisplayActionEventHandlerStd>();
     m_DisplayActionEventHandler->SetObservableBroadcast(m_DisplayActionEventBroadcast);
     m_DisplayActionEventHandler->InitActions();
-    /*l->addWidget(m_rw);
-    l->setContentsMargins(0, 0, 0, 0);*/
+    l->addWidget(m_rw);
+    l->setContentsMargins(0, 0, 0, 0);
 
     /*generateCircle(dataNum);
     generateSphere(dataNum);

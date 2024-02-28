@@ -124,7 +124,7 @@ void Widget::on_pushButton_broadcast_clicked()
                     if (!obj)
                     {
                         qDebug() << "page config error";
-                        return;
+                        continue;
                     }
                     usePageConfig = 1;
                     PluginUIInterface *interface=dynamic_cast<PluginUIInterface*>(obj);

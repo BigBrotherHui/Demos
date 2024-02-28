@@ -4,3 +4,5 @@ add_subdirectory(CgalDemoApp)
 add_subdirectory(DrawApp)
 add_subdirectory(DRR)
 add_subdirectory(CollisionDetect)
+add_subdirectory(CMakeUsage)
+

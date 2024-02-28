@@ -1,0 +1,18 @@
+#File  clitkGammaIndex.ggo
+package "clitkGammaIndex"
+version "1.1"
+purpose "Compute the gamma index map for target dose map vs reference dose map. If verbose is given, the ratio of gamma>1 pixels of the total pixel in the image is computed. Absolute dose margin has priority over relative dose margin. The relative dose margin is relative to the maximum dose in the reference image.\n\nclitkGammaIndex -v -i ref.mhd -j disp.mhd -o gamma.mhd -s 3 -r 0.04\nthis will compute the 3mm 4% gamma index between ref and disp."
+
+option "verbose"     v 	"Verbose"		          flag	   off
+
+option "reference" i 	"Reference dose map"	  string   yes
+option "target"	   j 	"Target dose map"	  string   yes
+option "output"    o 	"Output image filename"	  string   yes
+
+option "spatial-margin"   s 	"Spatial margin [mm]"	  double   yes
+option "relative-dose-margin"   r 	"Dose margin relative to max dose in reference [%]"	  double   no
+option "absolute-dose-margin"   d 	"Absolute dose margin [Gray]"	  double   no
+option "translation-x"   x 	"Target relative position x [mm]"	  double   default="0" no
+option "translation-y"   y 	"Target relative position y [mm]"	  double   default="0" no
+option "translation-z"   z 	"Target relative position z [mm]"	  double   default="0" no
+

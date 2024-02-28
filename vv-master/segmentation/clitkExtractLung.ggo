@@ -1,0 +1,71 @@
+#File clitkExtractLungs.ggo
+package "clitkExtractLungs"
+version "1.0"
+purpose "Segment lungs in CT image. Need 'patient' mask."
+
+option "config"	        -  "Config file"		  string  	no
+option "imagetypes"     -  "Display allowed image types"  flag          off
+
+option "verbose"        v  "Verbose"			  flag		off
+option "verboseStep"    -  "Verbose each step"		  flag		off
+option "writeStep"      w  "Write image at each step"	  flag		off
+option "verboseOption"  -  "Display options values"       flag          off
+option "verboseWarningOff" -  "Do not display warning"    flag          off
+option "verboseMemory"  -  "Display memory usage"         flag          off
+
+section "I/O"
+
+option "input"         i	"Input CT image filename"	  string  	yes
+option "afdb"          a	"Output Anatomical Feature DB (Carina position)"  string  no default="default.afdb"
+option "output"        o 	"Output lungs mask filename"      string 	no default="lung.mhd"
+option "outputTrachea" t 	"Output trachea mask filename"    string 	no default="trachea.mhd"
+
+section "Step 1 : Air remove"
+
+option "lower"	     -	"Initial lower threshold"                 int	no  	
+option "upper"	     -	"Initial upper threshold"		  int	no  	default="-300"
+option "minSize"     -	"Minimum component size in voxels"	  int		no  	default="100"
+#option "remove1"     -	"Labels not to keep in air mask (lungs)"  int		no  	multiple 	default="2"
+#option "firstKeep1"  -	"First label to keep"			  int		no  	default="1"
+#option "lastKeep1"   -	"Last label to keep"		          int		no  	
+
+section "Step 2 : find trachea"
+
+option "type"                        -  "trachea finding algorithm (0: original; 1: LOLA11)" int no default="0"
+option "skipslices"                  -  "0: Number of slices to skip before searching seed" int no default="0"
+option "upperThresholdForTrachea"    -	"0: Initial upper threshold for trachea"  double	no  default="-900"
+option "multiplierForTrachea"	     -	"0: Multiplier for the region growing"    double	no  default="5"
+option "thresholdStepSizeForTrachea" -	"0: Threshold step size"	               int      no  default="64"
+option "seed"                        -	"0,1: Index of the trachea seed point (in mm  NOT IN PIXELS)"      float	no  multiple
+option "doNotCheckTracheaVolume"     -  "0,1: If set, do not check the trachea volume" flag off
+option "verboseRG"                   -  "0,1: Verbose RegionGrowing"   flag off
+option "maxElongation"               -  "1: Maximum allowed elongation of candidate regions for the trachea" float no default="0.5"
+option "numSlices"                   -  "1: Number of slices to search for trachea" int no default="50"
+option "seedPreProcessingThreshold"   -  "1: Threshold for the pre-processing step of the algorithm" int no default="-400"
+
+section "Step 3 : auto extract lung"
+
+option "bins"	     -	"Number of bins to use for the Otsu thresholding"	int		no	default="500"	
+# option "remove2"     -	"Labels not to keep in air mask (gas)"    int		no  	multiple
+# option "firstKeep2"  -	"First label to keep"			  int		no  	default="1"
+# option "lastKeep2"   -	"Last label to keep"		          int		no  	
+
+section "Step 4 : remove trachea"
+
+option "radius"      -  "Radius for dilation"                     int           no      default="1"
+# option "remove3"     -	"Labels not to keep in lungs mask (trachea)"    int		no  	multiple
+# option "firstKeep3"  -	"First label to keep"			  int		no  	default="1"
+# option "lastKeep3"   -	"Last label to keep"		          int		no  	default="2"
+
+section "Step 5 : [optional] openclose"
+option "openclose"		-  "Perform an OpenClose operation"		flag off
+option "opencloseRadius"   	-  "OpenClose radius"	                        int no default="1"
+
+section "Step 6 : fill holes"
+option "doNotFillHoles"		-  "Do not fill holes if set"                 flag on
+#option "dir"    	        d  "Directions (axes) to perform filling (defaults to 2,1,0)"	int multiple no
+
+section "Step 7 : lung separation (labelling)"
+option "doNotSeparateLungs"   -  "Do not separate lungs if set"                 flag off
+option "removeSmallLabel"     -  "Remove small label (stomach?) before separation"  flag on
+option "noAutoCrop"	- 	"If set : do no crop final mask to BoundingBox"	                        flag 	off

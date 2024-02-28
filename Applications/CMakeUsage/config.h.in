@@ -1,0 +1,5 @@
+#cmakedefine var1
+#cmakedefine var2 "@var2@" #注意：@@之间的名称要与cmakedefine后的变量名一样
+#cmakedefine var3 "${var3}" #注意：${}之间的名称要与cmakedefine后的变量名一样
+#ifdef _@var4@_${var5}_
+#endif

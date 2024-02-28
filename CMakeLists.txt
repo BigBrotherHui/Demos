@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(Demos VERSION 0.1 LANGUAGES CXX)
-
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    add_compile_options(-fsanitize=address)
+    add_compile_options(-fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+    add_link_options(-fno-omit-frame-pointer)
+endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(COPY ${CMAKE_SOURCE_DIR}/dependence/script/postEvent.bat DESTINATION ${CMAKE_BINARY_DIR})
@@ -47,4 +52,25 @@ include("${MITK_MODULES_EXTENSION_DIR}/ModuleList.cmake")
     foreach(mitk_module ${DEMOS_MODULES})
       add_subdirectory("${MITK_MODULES_EXTENSION_DIR}/${mitk_module}")
 endforeach()
-
+include(InstallRequiredSystemLibraries)
+set(CPACK_PACKAGE_DIRECTORY ${PROJECT_BINARY_DIR}/pack)
+set(CPACK_INSTALL_CMAKE_CONFIGURATIONS Release)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(PROJECT_VERSION_FULL ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+# set(CPACK_SOURCE_IGNORE_FILES
+#         ${PROJECT_SOURCE_DIR}/build
+#         ${PROJECT_SOURCE_DIR}/cmake-build-debug
+#         ${PROJECT_SOURCE_DIR}/pack
+#         ${PROJECT_SOURCE_DIR}//.idea
+#         ${PROJECT_SOURCE_DIR}/.DS_Store
+#         ${PROJECT_SOURCE_DIR}/.git
+#         ${PROJECT_SOURCE_DIR}/.gitignore
+#         ${PROJECT_SOURCE_DIR}/.vscode
+#         ${PROJECT_SOURCE_DIR}/.PIC
+#         ${PROJECT_SOURCE_DIR}/assets/city.txt)
+set(CPACK_SOURCE_GENERATOR "TGZ")#ZIP
+set(CPACK_SOURCE_PACKAGE_FILE_NAME demos-${PROJECT_VERSION_FULL})
+include(CPack)

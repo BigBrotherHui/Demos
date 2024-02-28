@@ -1,0 +1,15 @@
+#File clitkTransformLandmarks.ggo
+package "clitkTransformLandmarks"
+version "1.0"
+purpose "Trasnform a set of landmarks with the given 4x4 matrix. Output to stdout."
+
+option "config"     - "Config file"       string    no
+option "verbose"    v     "Verbose"       flag    off
+
+option "input"    i "Input landmarks filename"      string    yes
+option "matrix"   m "Input 4x4 matrix filename ('.mat' file)"      string    no
+option "spacing"   s "If given, applies the given spacing (x,y,z) to the input points."      double    no multiple  default="1"
+option "output"		o	"Output landmarks filename"			string		yes
+option "type"		t	"Landmarks type ('pts' for Jef; 'txt' for VV ; 'vtk' for vtk meshes)"		string		no		default="txt" 
+
+

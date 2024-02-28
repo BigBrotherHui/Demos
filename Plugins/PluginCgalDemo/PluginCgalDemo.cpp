@@ -4,6 +4,7 @@
 #include "PluginInterface.h"
 #include "PluginCgalDemo.h"
 #include "Widget.h"
+int PluginCgalDemo::typeId = qRegisterMetaType<PluginCgalDemo*>("PluginCgalDemo");
 PluginCgalDemo::PluginCgalDemo()
 {
 }

@@ -28,6 +28,8 @@ endif()
 INCLUDE_DIRECTORIES(${CGAL_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
+include_directories(${CMAKE_SOURCE_DIR}/ThirdParty/libigl/include/igl/include)
+
 file(GLOB_RECURSE SOURCE_FILES "*.cpp" "*.cxx")
 file(GLOB_RECURSE HEADER_FILES "*.h")
 file(GLOB_RECURSE UI_FILES "*.ui")

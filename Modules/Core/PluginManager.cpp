@@ -66,6 +66,7 @@ QObject* PluginManager::tryConstructObject(QString pageName)
 {
     qDebug() << "tryConstructObject" << pageName;
     int type = QMetaType::type((pageName).toStdString().c_str());
+    qDebug() << "type:" << type;
     const QMetaObject* metaObj = QMetaType::metaObjectForType(type);
     if (metaObj)
         return metaObj->newInstance();

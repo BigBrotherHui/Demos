@@ -7,6 +7,7 @@
 #include <QBoxLayout>
 
 #include <vtkOutputWindow.h>
+#include <vtkTriangle.h>
 #include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Simple_cartesian.h>
@@ -141,8 +142,33 @@ void Widget::slot_load_clicked()
     mitk::RenderingManager::GetInstance()->InitializeViewByBoundingObjects(m_impl->m_w->GetVtkRenderWindow(), m_impl->m_ds);
 }
 
+vtkSmartPointer<vtkPolyData> igl2polydata(Eigen::MatrixXi sf, Eigen::MatrixXd sv)
+{
+    vtkSmartPointer<vtkPolyData> triangle_polydata = vtkSmartPointer<vtkPolyData>::New();
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    for(int i=0;i<sv.rows();++i)
+    {
+        double* pt = sv.row(i).data();
+        points->InsertNextPoint(pt);
+    }
+    vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
+    for (int i = 0; i < sf.rows(); ++i)
+    {
+        vtkSmartPointer<vtkTriangle> tri = vtkSmartPointer<vtkTriangle>::New();
+        tri->GetPointIds()->SetId(0, sf.row(i)[0]);
+        tri->GetPointIds()->SetId(1, sf.row(i)[1]);
+        tri->GetPointIds()->SetId(2, sf.row(i)[2]);
+        cells->InsertNextCell(tri);
+    }
+	triangle_polydata->SetPoints(points);
+    triangle_polydata->SetStrips(cells);
+    return triangle_polydata;
+}
+
 void Widget::slot_offset_clicked()
 {
+
+
     //not used
     return;
     vtkPolyData* vtp = static_cast<mitk::Surface*>(m_impl->m_ds->GetNamedNode("node")->GetData())->GetVtkPolyData();
