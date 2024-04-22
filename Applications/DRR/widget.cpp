@@ -49,6 +49,7 @@
 #include <opencv2/opencv.hpp>
 #include <vtkPoints.h>
 #include <vtkLine.h>
+#include <itkMetaImageIOFactory.h>
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
@@ -428,7 +429,7 @@ void Widget::CT3DNormalization(itk::Image<float, 3>::Pointer img, double dThresh
 	{
 		if (buffer[i] > dThreshold)
 		{
-			buffer[i] = buffer[i] / 1000 - dThreshold / 1000;
+			buffer[i] = buffer[i] / 1000 - dThreshold / 1000;//1000hu代表骨头
 		}
 		else
 		{
@@ -439,90 +440,92 @@ void Widget::CT3DNormalization(itk::Image<float, 3>::Pointer img, double dThresh
 
 void Widget::on_pushButton_importImage_clicked()
 {
-    QString dir=QFileDialog::getExistingDirectory(this, "选择图像序列", "D:/Images/");
+    QString dir=QFileDialog::getOpenFileName(this, "选择图像", "D:/Images/");
     if (dir.isEmpty())
         return;
-	using SeriesFileNamesType = itk::GDCMSeriesFileNames;
-	using ImageType = itk::Image<float, 3>;
-	using ReaderType = itk::ImageSeriesReader<ImageType>;
-	using ImageIOType = itk::GDCMImageIO;
-	ImageIOType::Pointer m_gdcmImageIO = ImageIOType::New();
-	SeriesFileNamesType::Pointer m_gdcmSeriesFileNames = SeriesFileNamesType::New();
-	m_gdcmSeriesFileNames->SetUseSeriesDetails(true);
-	// m_gdcmSeriesFileNames->AddSeriesRestriction("0008|0021");
-	m_gdcmSeriesFileNames->SetDirectory(dir.toStdString());
-	using SeriesIdContainer = std::vector<std::string>;
-	const SeriesIdContainer& seriesUID = m_gdcmSeriesFileNames->GetSeriesUIDs();
-	const std::string& seriesUIDStr = seriesUID.at(0);
-	using FileNamesContainer = std::vector<std::string>;
-	FileNamesContainer fileNames = m_gdcmSeriesFileNames->GetFileNames(seriesUIDStr);
-	ReaderType::Pointer reader = ReaderType::New();
-	reader->SetImageIO(m_gdcmImageIO);
-	reader->SetFileNames(fileNames);
-	reader->ForceOrthogonalDirectionOff();
+	//using SeriesFileNamesType = itk::GDCMSeriesFileNames;
+	//using ImageType = itk::Image<float, 3>;
+	//using ReaderType = itk::ImageSeriesReader<ImageType>;
+	//using ImageIOType = itk::GDCMImageIO;
+	//ImageIOType::Pointer m_gdcmImageIO = ImageIOType::New();
+	//SeriesFileNamesType::Pointer m_gdcmSeriesFileNames = SeriesFileNamesType::New();
+	//m_gdcmSeriesFileNames->SetUseSeriesDetails(true);
+	//// m_gdcmSeriesFileNames->AddSeriesRestriction("0008|0021");
+	//m_gdcmSeriesFileNames->SetDirectory(dir.toStdString());
+	//using SeriesIdContainer = std::vector<std::string>;
+	//const SeriesIdContainer& seriesUID = m_gdcmSeriesFileNames->GetSeriesUIDs();
+	//const std::string& seriesUIDStr = seriesUID.at(0);
+	//using FileNamesContainer = std::vector<std::string>;
+	//FileNamesContainer fileNames = m_gdcmSeriesFileNames->GetFileNames(seriesUIDStr);
+	//ReaderType::Pointer reader = ReaderType::New();
+	//reader->SetImageIO(m_gdcmImageIO);
+	//reader->SetFileNames(fileNames);
+	//reader->ForceOrthogonalDirectionOff();
+	itk::ObjectFactoryBase::RegisterFactory(itk::MetaImageIOFactory::New());
+	typedef float PixelType;
+	typedef itk::Image<PixelType, 3> RawImageType;
+	typedef itk::ImageFileReader<RawImageType> RawReaderType;
+	RawReaderType::Pointer reader = RawReaderType::New();
+	reader->SetFileName(dir.toUtf8().data());
 	try {
 		reader->Update();
-		typedef itk::IntensityWindowingImageFilter <ImageType, ImageType> IntensityWindowingImageFilterType;
-		IntensityWindowingImageFilterType::Pointer intensityFilter = IntensityWindowingImageFilterType::New();
-		intensityFilter->SetInput(reader->GetOutput());
-		intensityFilter->SetWindowLevel(1000, 400);//window,level//180,90
-		intensityFilter->SetOutputMinimum(0);
-		intensityFilter->SetOutputMaximum(255);
-		intensityFilter->Update();
-		m_image = intensityFilter->GetOutput();
-
-		//imageinterpolation(m_image, m_image->GetSpacing()[0]);
-		//CT3DNormalization(m_image,100);
-		//double origin[3]{ 0, 0, 0 };
-		//m_image->SetOrigin(origin);
-		//float spacing[3];
-		//int sz[3];
-		//for(int i=0;i<3;++i)
-		//{
-		//	spacing[i] = m_image->GetSpacing()[i];
-		//	sz[i] = m_image->GetLargestPossibleRegion().GetSize()[i];
-		//}
-		//siddon->SetImg3d((float *)m_image->GetBufferPointer(), spacing, sz);
-		//float spacing2d[2]{ .5,.5 };
-		//int imageSize[2]{ 512,512 };
-		//siddon->SetImg2dParameter(spacing2d, imageSize);
-		//float tmp[12]{ 0 };
-		//siddon->SetTransformMatrix(tmp);
-		//float *result = new float[imageSize[0]* imageSize[1]] {0.0};
-		//float transformMatrixFront[12];
-		//GenerateMatrixHelper *MatrixHelper = new GenerateMatrixHelper;
-		//MatrixHelper->generateEulerTransform(0,0,0,0,0,0);
-		//float center2Image[3]{0,0,0};//3.17383,25.3906,-66.25
-		//MatrixHelper->setCenterOffset(center2Image);
-		//MatrixHelper->setPixelSpacing(spacing);
-		//MatrixHelper->setFocalDistance(5042.04 * .5);//
-		//MatrixHelper->setImageSize(imageSize);
-		//Eigen::Matrix4f s12s2;
-		//s12s2 <<
-		//	0.032626, 0.999462, 0.003303, 532.622380,
-		//	-0.999457, 0.032611, 0.004761, 726.239285,
-		//	0.004651, -0.003456, 0.999983, -0.029465,
-		//	0.000000, 0.000000, 0.000000, 1.000000;
-
-		//Eigen::Matrix4f mt = Eigen::Matrix4f::Identity();
-		//MatrixHelper->setMatrixS1toS2(mt.data());
-		//MatrixHelper->getTransformMatrix(true, transformMatrixFront);
-
-		//siddon->Run(transformMatrixFront,result);
-		//int width=512,height=512;
-		//float minVal = *std::min_element(result, result + width * height);
-		//float maxVal = *std::max_element(result, result + width * height);
-		//cv::Mat grayImage(512, 512, CV_16UC1);
-		//for (int i = 0; i < width; ++i) {
-		//	for (int j = 0; j < height; ++j) {
-		//		grayImage.at<ushort>(i, j) =4095*( static_cast<ushort>(width *i+j)-minVal)/(maxVal-minVal);
-		//	}
-		//}
-		//cv::imshow("output", grayImage);
-		//delete result;
-		//result = nullptr;
-		//delete MatrixHelper;
-		//MatrixHelper = nullptr;
+		//typedef itk::IntensityWindowingImageFilter <ImageType, ImageType> IntensityWindowingImageFilterType;
+		//IntensityWindowingImageFilterType::Pointer intensityFilter = IntensityWindowingImageFilterType::New();
+		//intensityFilter->SetInput(reader->GetOutput());
+		//intensityFilter->SetWindowLevel(1000, 400);//window,level//180,90
+		//intensityFilter->SetOutputMinimum(0);
+		//intensityFilter->SetOutputMaximum(255);
+		//intensityFilter->Update();
+//		m_image = reader->GetOutput(); 
+//#include "itkImageDuplicator.h"
+//		using DuplicatorType = itk::ImageDuplicator<RawImageType>;
+//		auto duplicator = DuplicatorType::New();
+//		duplicator->SetInputImage(m_image);
+//		duplicator->Update();
+//		RawImageType::Pointer clonedImage = duplicator->GetOutput();
+//		imageinterpolation(clonedImage, clonedImage->GetSpacing()[0]);
+//		CT3DNormalization(clonedImage,100);
+//		//float or [3]{0,0,0};
+//		//clonedImage->SetOrigin(or );
+//		float spacing[3];
+//		int sz[3];
+//		for(int i=0;i<3;++i)
+//		{
+//			spacing[i] = clonedImage->GetSpacing()[i];
+//			sz[i] = clonedImage->GetLargestPossibleRegion().GetSize()[i];
+//		}
+//		siddon->SetImg3d((float *)clonedImage->GetBufferPointer(), spacing, sz);
+//		float spacing2d[2]{ .5,.5 };
+//		int imageSize[2]{ 512,512 };
+//		siddon->SetImg2dParameter(spacing2d, imageSize);
+//		float tmp[12]{ 0 };
+//		siddon->SetTransformMatrix(tmp);
+//		float *result = new float[imageSize[0]* imageSize[1]] {0.0};
+//		float transformMatrixFront[12];
+//		MatrixHelper = new GenerateMatrixHelper;
+//		MatrixHelper->generateEulerTransform(0,0,0,0,0,0);
+//		MatrixHelper->setPixelSpacing(spacing);
+//		MatrixHelper->setFocalDistance(/*5042.04*/100);// * .5
+//		MatrixHelper->setImageSize(imageSize);
+//		float centerOffset[3]{ 0.488283,49.8047,-3.75 };//mask1
+//		MatrixHelper->setCenterOffset(centerOffset);
+//		MatrixHelper->getTransformMatrix(true, transformMatrixFront);
+//
+//		siddon->Run(transformMatrixFront,result);
+//		int width=512,height=512;
+//		float minVal = *std::min_element(result, result + width * height);
+//		float maxVal = *std::max_element(result, result + width * height);
+//		cv::Mat grayImage(512, 512, CV_16UC1);
+//		for (int i = 0; i < width; ++i) {
+//			for (int j = 0; j < height; ++j) {
+//				grayImage.at<ushort>(i, j) =4095*( static_cast<ushort>(width *i+j)-minVal)/(maxVal-minVal);
+//			}
+//		}
+//		cv::imshow("output", grayImage);
+//		delete result;
+//		result = nullptr;
+		/*delete MatrixHelper;
+		MatrixHelper = nullptr;*/
 	}
 	catch (itk::ExceptionObject& err)
 	{

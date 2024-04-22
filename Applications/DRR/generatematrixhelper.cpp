@@ -38,6 +38,7 @@ void  GenerateMatrixHelper::generateTransformMatrix(float* M)
     P[2][2] = 0.0;
 
     float Rs1tos2[4][4]{};
+    memset(Rs1tos2, 0, sizeof(float) * 16);
     if (!isFront) //判定正侧位
     {
         for (int i = 0; i < 4; ++i)
@@ -83,6 +84,9 @@ void  GenerateMatrixHelper::generateTransformMatrix(float* M)
 
 
     // M = P * T*R;
+    //R/R2是旋转矩阵
+    //T是中心偏移矩阵
+    //P是
     float R3[4][4];
     for (int i = 0; i < 4; i++)
     {

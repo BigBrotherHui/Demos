@@ -9,6 +9,7 @@
 #include <itkImage.h>
 #include <vtkPolyData.h>
 #include "kernel.cuh"
+#include "generatematrixhelper.h"
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
 QT_END_NAMESPACE
@@ -54,5 +55,6 @@ private:
     vtkSmartPointer<vtkActor> m_actor_farplane;
     //vtkSmartPointer<vtkActor> actorfrustum;
     SiddonGPU* siddon{nullptr};
+    GenerateMatrixHelper* MatrixHelper{nullptr};
 };
 
