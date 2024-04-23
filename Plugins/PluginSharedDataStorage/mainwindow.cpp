@@ -107,12 +107,7 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
             }
         }*/
 
-        double m_axialMatrix[16] = {
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        };
+        double m_axialMatrix[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
         sourceMatrix->DeepCopy(m_axialMatrix);
         vtkImageData* imgData = static_cast<mitk::Image*>(ds1->GetNamedNode("imageNode")->GetData())->GetVtkImageData();
         double center[3];
@@ -122,10 +117,10 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
         center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
         center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
         center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
-        sourceMatrix->SetElement(0, 3, center[0]);
+        /*sourceMatrix->SetElement(0, 3, center[0]);
         sourceMatrix->SetElement(1, 3, center[1]);
         sourceMatrix->SetElement(2, 3, center[2]);
-        sourceMatrix->Modified();
+        sourceMatrix->Modified();*/
         qint32 n = rep->GetNumberOfNodes();
         vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
         vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
@@ -176,11 +171,11 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
         flip_filter->SetInputData(permute_filter->GetOutput());
         flip_filter->SetFilteredAxes(1);
         flip_filter->Update();
-        vtkNew<vtkMetaImageWriter> wr;
+        /*vtkNew<vtkMetaImageWriter> wr;
         wr->SetInputData(flip_filter->GetOutput());
         wr->SetFileName("cpr.mhd");
         wr->SetRAWFileName("cpr.raw");
-        wr->Write();
+        wr->Write();*/
         qDebug()<<"range1:"<<flip_filter->GetOutput()->GetScalarRange()[1];
     	mitk::DataNode::Pointer imgNode = mitk::DataNode::New();
         mitk::Image::Pointer img = mitk::Image::New();
@@ -225,7 +220,7 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
 
 void MainWindow::on_pushButton_loaddata_clicked()
 {
-    std::string dicomSeriesPath="D:/Images/knee-small";
+    std::string dicomSeriesPath="D:/Images/SLC";
     using TPixel = signed short;
     const unsigned int DIM3 = 3;
     using TImage = itk::Image<TPixel, DIM3>;
