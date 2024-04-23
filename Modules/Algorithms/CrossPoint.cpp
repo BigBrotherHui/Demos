@@ -2,11 +2,11 @@
 
 // **************************************************************************************************************
 
-// ¹¦ÄÜ£º¿Õ¼äÖ±ÏßÄâºÏ
+// åŠŸèƒ½ï¼šç©ºé—´ç›´çº¿æ‹Ÿåˆ
 
-// ÊäÈë£ºpointsMatrix£º3DµãÑù±¾¼¯
+// è¾“å…¥ï¼špointsMatrixï¼š3Dç‚¹æ ·æœ¬é›†
 
-// Êä³ö£ºV£ºÖ±Ïß·½ÏòÏòÁ¿£»(centerX centerY centerZ):3DÑù±¾µã¼¯ÖÊĞÄ
+// è¾“å‡ºï¼šVï¼šç›´çº¿æ–¹å‘å‘é‡ï¼›(centerX centerY centerZ):3Dæ ·æœ¬ç‚¹é›†è´¨å¿ƒ
 
 // return: void
 
@@ -15,24 +15,24 @@ void spacialLineFitting(Eigen::MatrixXd& pointsMatrix, Eigen::Matrix3d& V, doubl
 {
     int r = pointsMatrix.rows();
     Eigen::MatrixXd sumMatrixXd(1, 3);
-    sumMatrixXd = pointsMatrix.colwise().sum();//Çóx£¬y£¬zºÍ
-    // <1>¡¢ÇóÖÊĞÄ
+    sumMatrixXd = pointsMatrix.colwise().sum();//æ±‚xï¼Œyï¼Œzå’Œ
+    // <1>ã€æ±‚è´¨å¿ƒ
     centerX = sumMatrixXd(0, 0) / r;
     centerY = sumMatrixXd(0, 1) / r;
     centerZ = sumMatrixXd(0, 2) / r;
     Eigen::MatrixXd centerdMatrix(r, 3);
-    // <2>¡¢È¥ÖÊĞÄ
+    // <2>ã€å»è´¨å¿ƒ
     for (int i = 0; i < r; i++)
     {
         centerdMatrix.row(i)[0] = pointsMatrix.row(i)[0] - centerX;
         centerdMatrix.row(i)[1] = pointsMatrix.row(i)[1] - centerY;
         centerdMatrix.row(i)[2] = pointsMatrix.row(i)[2] - centerZ;
     }
-    // <3>¡¢SVD·Ö½â
+    // <3>ã€SVDåˆ†è§£
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(centerdMatrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
     V = svd.matrixV();
 }
-//×Ö·û×ªdouble
+//å­—ç¬¦è½¬double
 template <class Type>
 Type stringToNum(string& str)
 {
@@ -41,7 +41,7 @@ Type stringToNum(string& str)
     iss >> num;
     return num;
 }
-//¶ÁÈ¡csvÎÄ¼şµã
+//è¯»å–csvæ–‡ä»¶ç‚¹
 void readPoint(string strPath, vector<vector<double>>& pointsVec)
 {
     std::ifstream _csvInput;
@@ -49,18 +49,18 @@ void readPoint(string strPath, vector<vector<double>>& pointsVec)
     std::string _Oneline;
     std::vector<double> _lineOfstr;
     vector<vector<double>> verticalLinePoints;
-    while (std::getline(_csvInput, _Oneline))  // ÕûĞĞ¶ÁÈ¡£¬»»ĞĞ·û¡°\n¡±Çø·Ö£¬Óöµ½ÎÄ¼şÎ²±êÖ¾eofÖÕÖ¹¶ÁÈ¡
+    while (std::getline(_csvInput, _Oneline))  // æ•´è¡Œè¯»å–ï¼Œæ¢è¡Œç¬¦â€œ\nâ€åŒºåˆ†ï¼Œé‡åˆ°æ–‡ä»¶å°¾æ ‡å¿—eofç»ˆæ­¢è¯»å–
     {
-        std::istringstream _Readstr(_Oneline); // ½«ÕûĞĞ×Ö·û´®_Oneline¶ÁÈëµ½×Ö·û´®Á÷istringstreamÖĞ
+        std::istringstream _Readstr(_Oneline); // å°†æ•´è¡Œå­—ç¬¦ä¸²_Onelineè¯»å…¥åˆ°å­—ç¬¦ä¸²æµistringstreamä¸­
         std::string _partOfstr;
         double pointCorr;
         int i = 0;
-        while (std::getline(_Readstr, _partOfstr, ',')) // ½«×Ö·û´®Á÷_ReadstrÖĞµÄ×Ö·û¶ÁÈëµ½_partOfstr×Ö·û´®ÖĞ£¬ÒÔ¶ººÅÎª·Ö¸ô·û
+        while (std::getline(_Readstr, _partOfstr, ',')) // å°†å­—ç¬¦ä¸²æµ_Readsträ¸­çš„å­—ç¬¦è¯»å…¥åˆ°_partOfstrå­—ç¬¦ä¸²ä¸­ï¼Œä»¥é€—å·ä¸ºåˆ†éš”ç¬¦
         {
             if (i < 3)
             {
                 pointCorr = stringToNum<double>(_partOfstr);
-                _lineOfstr.push_back(pointCorr); // ½«¸Õ¸Õ¶ÁÈ¡µÄ×Ö·û´®Ìí¼Óµ½ÏòÁ¿_lineOfstrÖĞ,
+                _lineOfstr.push_back(pointCorr); // å°†åˆšåˆšè¯»å–çš„å­—ç¬¦ä¸²æ·»åŠ åˆ°å‘é‡_lineOfsträ¸­,
             }
             else if (i == 3)
             {
@@ -78,28 +78,28 @@ void readPoint(string strPath, vector<vector<double>>& pointsVec)
 
 // **************************************************************************************************************
 
-// ¹¦ÄÜ£º¼ÆËã¹«´¹ÏßLÓëÁ½Ö±Ïß£¨L0¡¢L1£©½»µã
+// åŠŸèƒ½ï¼šè®¡ç®—å…¬å‚çº¿Lä¸ä¸¤ç›´çº¿ï¼ˆL0ã€L1ï¼‰äº¤ç‚¹
 
-// ÊäÈë£ºdir_V:ÊúÏòÖ±Ïß£¨L0£©·½ÏòÏòÁ¿£» center_V£ºÊúÏò3DµãÖÊĞÄ
-//       dir_H:ºáÏòÖ±Ïß£¨L1£©·½ÏòÏòÁ¿£» center_H£ººáÏò3DµãÖÊĞÄ
+// è¾“å…¥ï¼šdir_V:ç«–å‘ç›´çº¿ï¼ˆL0ï¼‰æ–¹å‘å‘é‡ï¼› center_Vï¼šç«–å‘3Dç‚¹è´¨å¿ƒ
+//       dir_H:æ¨ªå‘ç›´çº¿ï¼ˆL1ï¼‰æ–¹å‘å‘é‡ï¼› center_Hï¼šæ¨ªå‘3Dç‚¹è´¨å¿ƒ
 
-// Êä³ö£ºp0: L0Óë¹«´¹Ïß£¨L£©µÄ½»µã£» p1: L1Óë¹«´¹Ïß£¨L£©µÄ½»µã£»
+// è¾“å‡ºï¼šp0: L0ä¸å…¬å‚çº¿ï¼ˆLï¼‰çš„äº¤ç‚¹ï¼› p1: L1ä¸å…¬å‚çº¿ï¼ˆLï¼‰çš„äº¤ç‚¹ï¼›
 
-// return: -1: L0¡¢L1Æ½ĞĞ£¨ÖØºÏ£©
-//          0: L0¡¢L1²»Æ½ĞĞ£¨²»ÖØºÏ£©
+// return: -1: L0ã€L1å¹³è¡Œï¼ˆé‡åˆï¼‰
+//          0: L0ã€L1ä¸å¹³è¡Œï¼ˆä¸é‡åˆï¼‰
 
 // **************************************************************************************************************
 int Intersection3DPoint(Eigen::Matrix3d dir_V, vector<double> center_V, Eigen::Matrix3d dir_H, vector<double> center_H, vector<double>& p0, vector<double>& p1)
 {
-    //Ö±Ïß1£º (x - x0)/a0 = (y - y0)/b0 = (z - z0)/c0
-    double a0 = dir_V(0, 0), b0 = dir_V(1, 0), c0 = dir_V(2, 0); // (a0 b0 c0) ÊÇÊúÏòÖ±ÏßL0µÄ·½ÏòÏòÁ¿
-    double x0 = center_V[0], y0 = center_V[1], z0 = center_V[2]; // (x0 y0 z0) ÊÇÊúÏò3DÑù±¾µãµÄÖÊĞÄ
-    //Ö±Ïß2£º (x - x1)/a1 = (y - y1)/b1 = (z - z1)/c1
+    //ç›´çº¿1ï¼š (x - x0)/a0 = (y - y0)/b0 = (z - z0)/c0
+    double a0 = dir_V(0, 0), b0 = dir_V(1, 0), c0 = dir_V(2, 0); // (a0 b0 c0) æ˜¯ç«–å‘ç›´çº¿L0çš„æ–¹å‘å‘é‡
+    double x0 = center_V[0], y0 = center_V[1], z0 = center_V[2]; // (x0 y0 z0) æ˜¯ç«–å‘3Dæ ·æœ¬ç‚¹çš„è´¨å¿ƒ
+    //ç›´çº¿2ï¼š (x - x1)/a1 = (y - y1)/b1 = (z - z1)/c1
     double a1 = dir_H(0, 0), b1 = dir_H(1, 0), c1 = dir_H(2, 0);
     double x1 = center_H[0], y1 = center_H[1], z1 = center_H[2];
     Eigen::Matrix<double, 1, 3> dir_V_, dir_H_;
 
-    // ·½ÏòÏòÁ¿Áã·ÖÁ¿²¹³¥
+    // æ–¹å‘å‘é‡é›¶åˆ†é‡è¡¥å¿
     if (a0 == 0) // abs(a0 - 1e-5)
         a0 += 1e-5;
     if (b0 == 0)
@@ -117,7 +117,7 @@ int Intersection3DPoint(Eigen::Matrix3d dir_V, vector<double> center_V, Eigen::M
     //cout << a0 / a1 << endl;
     //cout << b0 / b1 << endl;
     //cout << c0 / c1 << endl;
-    // ÅĞ¶ÏÆ½ĞĞ(ÖØºÏ)
+    // åˆ¤æ–­å¹³è¡Œ(é‡åˆ)
     if (a0 / a1 == b0 / b1 == c0 / c1)
         return -1;
 
@@ -127,12 +127,12 @@ int Intersection3DPoint(Eigen::Matrix3d dir_V, vector<double> center_V, Eigen::M
     dir_H_(0, 0) = a1;
     dir_H_(0, 1) = b1;
     dir_H_(0, 2) = c1;
-    // <1>¡¢Çó¹«´¹Ïß·½Ïò
-    Eigen::MatrixXd crossM = dir_H_.cross(dir_V_); // (a0 b0 c0) Óë (a1 b1 c1) ×÷²æ»ı -> ¹«´¹ÏòÁ¿(a2 b2 c2)
+    // <1>ã€æ±‚å…¬å‚çº¿æ–¹å‘
+    Eigen::MatrixXd crossM = dir_H_.cross(dir_V_); // (a0 b0 c0) ä¸ (a1 b1 c1) ä½œå‰ç§¯ -> å…¬å‚å‘é‡(a2 b2 c2)
     double a2 = crossM(0, 0);
     double b2 = crossM(0, 1);
     double c2 = crossM(0, 2);
-    // <2>¡¢Çó½»µãp0¡¢p1(ÍÆµ¼¼û readme.txt)
+    // <2>ã€æ±‚äº¤ç‚¹p0ã€p1(æ¨å¯¼è§ readme.txt)
     Eigen::Matrix<double, 2, 2> A;
     A(0, 0) = a1 * b2 - a2 * b1;
     A(0, 1) = a2 * b0 - a0 * b2;
@@ -142,7 +142,7 @@ int Intersection3DPoint(Eigen::Matrix3d dir_V, vector<double> center_V, Eigen::M
     B(0, 0) = a2 * (y1 - y0) + b2 * (x0 - x1);
     B(1, 0) = b2 * (z1 - z0) + c2 * (y0 - y1);
     Eigen::Matrix<double, 2, 1> X;
-    X = A.inverse() * B; // ½â·½³Ì A*X = B
+    X = A.inverse() * B; // è§£æ–¹ç¨‹ A*X = B
     double alpha = X(1, 0);
     double beta = X(0, 0);
     /*p0.resize(3);

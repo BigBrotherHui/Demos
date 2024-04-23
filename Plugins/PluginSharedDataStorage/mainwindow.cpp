@@ -82,6 +82,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long, void*, void*)
 {
+    qDebug() << "SlotContourEndInteractionEvent";
     auto widget = dynamic_cast<vtkContourWidget*>(t_obj);
     auto rep = dynamic_cast<vtkOrientedGlyphContourRepresentation*>(widget->GetContourRepresentation());
     if (rep) {
@@ -90,7 +91,7 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
         /*double pt[3]{ 100, 200, 200 };
         mitk::Point3D mpt(pt);*/
     	//w1->GetRenderWindow1()->GetSliceNavigationController()->SelectSliceByPoint(mpt);
-        const mitk::PlaneGeometry* plane1 = w1->GetRenderWindow1()->GetSliceNavigationController()->GetCurrentPlaneGeometry();
+        /*const mitk::PlaneGeometry* plane1 = w1->GetRenderWindow1()->GetSliceNavigationController()->GetCurrentPlaneGeometry();
         const mitk::PlaneGeometry* plane2 = w1->GetRenderWindow2()->GetSliceNavigationController()->GetCurrentPlaneGeometry();
         const mitk::PlaneGeometry* plane3 = w1->GetRenderWindow3()->GetSliceNavigationController()->GetCurrentPlaneGeometry();
         mitk::Line3D line;
@@ -104,11 +105,31 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
                 sourceMatrix->SetElement(1, 3, point[1]);
                 sourceMatrix->SetElement(2, 3, point[2]);
             }
-        }
+        }*/
+
+        double m_axialMatrix[16] = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        };
+        sourceMatrix->DeepCopy(m_axialMatrix);
+        vtkImageData* imgData = static_cast<mitk::Image*>(ds1->GetNamedNode("imageNode")->GetData())->GetVtkImageData();
+        double center[3];
+        double* origin = imgData->GetOrigin();
+        int* extent = imgData->GetExtent();
+        double* spacing = imgData->GetSpacing();
+        center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
+        center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
+        center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
+        sourceMatrix->SetElement(0, 3, center[0]);
+        sourceMatrix->SetElement(1, 3, center[1]);
+        sourceMatrix->SetElement(2, 3, center[2]);
+        sourceMatrix->Modified();
         qint32 n = rep->GetNumberOfNodes();
         vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
         vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
-        lines->InsertCellPoint(n);
+        lines->InsertNextCell(n);
         for (qint32 i = 0; i < n; ++i) {
             double p[3];
             rep->GetNthNodeWorldPosition(i, p);
@@ -117,6 +138,8 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
             transform1->Translate(p[0], p[1], 0);
             points->InsertNextPoint(transform1->GetMatrix()->GetElement(0, 3), transform1->GetMatrix()->GetElement(1, 3),
                 transform1->GetMatrix()->GetElement(2, 3));
+            qDebug() << transform1->GetMatrix()->GetElement(0, 3)<< transform1->GetMatrix()->GetElement(1, 3)<<
+                transform1->GetMatrix()->GetElement(2, 3);
             lines->InsertCellPoint(i);
         }
         vtkSmartPointer<vtkPolyData> p = vtkSmartPointer<vtkPolyData>::New();
@@ -131,11 +154,10 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
         vtkNew<vtkImageAppend> append;
         append->SetAppendAxis(2);
         vtkNew<CBCTSplineDrivenImageSlicer> reslicer;
-        vtkImageData* imgData = static_cast<mitk::Image*>(ds1->GetNamedNode("imageNode")->GetData())->GetVtkImageData();
         reslicer->SetInputData(imgData);
         reslicer->SetPathConnection(spline_filter->GetOutputPort());
         long long nb_points = spline_filter->GetOutput()->GetNumberOfPoints();
-        qDebug() << "nb_points:" << nb_points;
+        qDebug() << "nb_points after splinefilter:" << nb_points;
         for (int pt_id = 0; pt_id < nb_points; pt_id++) {
             reslicer->Setoffset_point_(pt_id);
             reslicer->Update();
@@ -144,6 +166,8 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
             append->AddInputData(tempSlice);
         }
         append->Update();
+        qDebug() << "range1 append:" << append->GetOutput()->GetScalarRange()[1];
+
         vtkNew<vtkImagePermute> permute_filter;
         permute_filter->SetInputData(append->GetOutput());
         permute_filter->SetFilteredAxes(2, 0, 1);
@@ -152,6 +176,11 @@ void MainWindow::SlotContourEndInteractionEvent(vtkObject* t_obj, unsigned long,
         flip_filter->SetInputData(permute_filter->GetOutput());
         flip_filter->SetFilteredAxes(1);
         flip_filter->Update();
+        vtkNew<vtkMetaImageWriter> wr;
+        wr->SetInputData(flip_filter->GetOutput());
+        wr->SetFileName("cpr.mhd");
+        wr->SetRAWFileName("cpr.raw");
+        wr->Write();
         qDebug()<<"range1:"<<flip_filter->GetOutput()->GetScalarRange()[1];
     	mitk::DataNode::Pointer imgNode = mitk::DataNode::New();
         mitk::Image::Pointer img = mitk::Image::New();

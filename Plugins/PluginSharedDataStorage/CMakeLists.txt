@@ -31,7 +31,8 @@ source_group("Source Files" FILES ${SRC_FILES})
 source_group("Forms" REGULAR_EXPRESSION ".ui$")
 source_group("Generated Files" REGULAR_EXPRESSION "ui_.*\\.h$|moc.*\\.cpp$|\\.stamp$|\\.rule$")
 include_directories(${CMAKE_SOURCE_DIR}/CommonHeader)
-add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCES})
+#add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCES})
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 target_compile_definitions(${PROJECT_NAME} PUBLIC PlUGINSHAREDDAtASTORAGE_DLL)
 #设置输出目录（属性-》常规-》输出目录）（不需要改动）
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -52,5 +53,5 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Plugins")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core ${ITK_LIBRARIES} ${VTK_LIBRARIES} SplineDrivenImageSlicer-9.1
-MitkCore MitkQtWidgets MitkMapperExt MitkDICOM MitkAlgorithmsExt
+MitkCore MitkQtWidgets
 )

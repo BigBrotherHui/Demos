@@ -53,5 +53,5 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Plugins")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Core Qt5::Concurrent ${VTK_LIBRARIES}
-MitkCore MitkQtWidgets MitkMapperExt
+MitkCore MitkQtWidgets
 )

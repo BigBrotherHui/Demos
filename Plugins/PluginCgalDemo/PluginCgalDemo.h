@@ -6,12 +6,12 @@
 #include <QDebug>
 class PluginManager;
 
-class PluginCgalDemo : public QObject, public PluginUIInterface
+class PLUGINCGALDEMO_EXPORT PluginCgalDemo : public QObject, public PluginUIInterface
 {
     Q_OBJECT
     Q_INTERFACES(PluginUIInterface)
     Q_PLUGIN_METADATA(IID "cgaldemo")
-
+    static int typeId;
 public:
     PluginCgalDemo();
     ~PluginCgalDemo();

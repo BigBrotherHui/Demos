@@ -82,7 +82,7 @@ void usage()
 }
 
 
-itk::Image<unsigned char,3>::Pointer drr(itk::Image<short,3>::Pointer inputImage,std::string outputFileName, float scd = 1000, float rx = 0, float ry = 0, float rz = 0,
+itk::Image<unsigned char,3>::Pointer drr(itk::Image<float,3>::Pointer inputImage,std::string outputFileName, float scd = 1000, float rx = 0, float ry = 0, float rz = 0,
 	float tx = 0, float ty = 0, float tz = 0,float threshold=0,bool verbose = false, bool customized_iso = false,bool customized_2DCX=false,bool rprojection=0)
 {
 	const char *output_name = outputFileName.c_str();
@@ -135,7 +135,7 @@ itk::Image<unsigned char,3>::Pointer drr(itk::Image<short,3>::Pointer inputImage
 	// purposes of the interpolator both images must be three dimensional.
 
 	const     unsigned int   Dimension = 3;
-	typedef   short  InputPixelType;
+	typedef   float  InputPixelType;
 	typedef   unsigned char OutputPixelType;
 
 	typedef itk::Image< InputPixelType,  Dimension >   InputImageType;
@@ -374,7 +374,7 @@ itk::Image<unsigned char,3>::Pointer drr(itk::Image<short,3>::Pointer inputImage
 	typedef itk::IntensityWindowingImageFilter <InputImageType, OutputImageType> IntensityWindowingImageFilterType;
 	IntensityWindowingImageFilterType::Pointer intensityFilter = IntensityWindowingImageFilterType::New();
 	intensityFilter->SetInput(filter->GetOutput());
-	intensityFilter->SetWindowLevel(255, 127);//window,level//180,90
+	intensityFilter->SetWindowLevel(1000, 400);//window,level//180,90
 	intensityFilter->SetOutputMinimum(0);
 	intensityFilter->SetOutputMaximum(255);
 	intensityFilter->Update();
