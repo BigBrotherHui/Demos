@@ -1,15 +1,15 @@
 
 #include "widget.h"
-#include "registerfineadjustdialog.h"
 #include <QApplication>
-#include <QmitkRegisterClasses.h>
-
+#include <vtkAutoInit.h>
+VTK_MODULE_INIT(vtkRenderingOpenGL2);
+VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
+VTK_MODULE_INIT(vtkInteractionStyle);
+VTK_MODULE_INIT(vtkRenderingFreeType);
 int main( int argc, char *argv[] )
 {
-	QmitkRegisterClasses();
 	QApplication a(argc, argv);
-	RegisterFineAdjustDialog w;
-	//Widget w;
+	Widget w;
 	w.show();
 	return a.exec();
 }
