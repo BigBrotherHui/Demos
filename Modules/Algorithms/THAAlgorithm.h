@@ -91,4 +91,31 @@ class THAAlgorithm
 
 	//cup placement
 	static Eigen::Matrix4d CalApplyAIAngleMatrix(Eigen::Vector3d center, double Anteversion, double Inclination, Defintion::ESide side);
+	inline bool StemInitPosition(double* FHC, double* FNC, double* PFCA, double* DFCA, double* res)
+    {
+        Eigen::Vector3d fhc{ FHC };
+        
+        Eigen::Vector3d pfca{ PFCA };
+        Eigen::Vector3d dfca{ DFCA };
+        //plane
+        Eigen::Vector3d plane = (dfca - pfca).cross(fhc - pfca);
+        //project FHC and FNC on plan(fhc pfca dface,three points as a plane)
+        double fhc_projected[3], fnc_projected[3];
+        projectToPlane(FHC, PFCA, plane.data(), fhc_projected);
+        projectToPlane(FNC, PFCA, plane.data(), fnc_projected);
+
+        //find intersection
+        Eigen::Vector3d intersection;
+
+        if (!lineIntersect3d_2points(Eigen::Vector3d(fhc_projected), Eigen::Vector3d(fnc_projected), pfca, dfca, intersection))
+        {
+            return false;
+        }
+        res[0] = intersection.data()[0];
+        res[1] = intersection.data()[1];
+        res[2] = intersection.data()[2];
+        //res = intersection.data();
+        std::cout << res[0]<<"," << res[1] << "," << res[2] << std::endl;
+        return true;
+    };
 };
