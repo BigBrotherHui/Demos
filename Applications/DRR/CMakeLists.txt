@@ -1,21 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(DRR LANGUAGES CXX CUDA)
-
-
-find_program(CCACHE_PROGRAM ccache)
-#if(CCACHE_PROGRAM)
-#  message(STATUS "Set up ccache ...")
-#  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-#  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-#endif()
-#include(CheckLanguage)
-#if(NOT CUDAToolkit_FOUND)
-#    include(FindCUDAToolkit)
-#endif()
-#include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-#check_language(CUDA)
-#set(CMAKE_CUDA_STANDARD 17)
-#set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+project(DRR LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -44,26 +28,6 @@ source_group("Generated Files" REGULAR_EXPRESSION "ui_.*\\.h$|moc.*\\.cpp$|\\.st
 
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${PROJECT_SOURCES})
-#set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES native)
-
-#cuda_add_executable(${PROJECT_NAME} kernel.cu)
-#target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Applications")
-#设置输出目录（属性-》常规-》输出目录）（不需要改动）
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>
-    ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>
-    LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib/${CMAKE_GENERATOR_PLATFORM}/$<CONFIGURATION>
-)
-#设置后期生成事件
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND cmd /c "${CMAKE_BINARY_DIR}/postEvent.bat $(SolutionDir) $(SolutionName) $(ProjectDir) $(ProjectName) $(Platform) $(Configuration) $(TargetExt)"
-)
-else()
-    # 其他系统的操作
-    # ...
-endif()
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Widgets Qt5::Core Qt5::Concurrent ${ITK_LIBRARIES} ${VTK_LIBRARIES})
 

@@ -83,7 +83,7 @@ void usage()
 
 
 itk::Image<unsigned char,3>::Pointer drr(itk::Image<float,3>::Pointer inputImage,std::string outputFileName, float scd = 1000, float rx = 0, float ry = 0, float rz = 0,
-	float tx = 0, float ty = 0, float tz = 0,float threshold=0,bool verbose = false, bool customized_iso = false,bool customized_2DCX=false,bool rprojection=0)
+	float tx = 0, float ty = 0, float tz = 0,float threshold=200,bool verbose = false, bool customized_iso = false,bool customized_2DCX=false,bool rprojection=0)
 {
 	const char *output_name = outputFileName.c_str();
 
